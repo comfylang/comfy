@@ -1,5 +1,5 @@
 [workspace]
 
-members = ["compiler", "parser", "types", "utils"]
+members = ["types", "utils", "parser", "compiler"]
 
 resolver = "2"
