@@ -47,8 +47,13 @@ pub enum Types {
 pub enum Literals {
     True,
     False,
-    Int(i32),
-    Float(f32),
-    Char(char),
+
+    // Numeric
+    Decimal(String),
+    Hex(String),
+    Octal(String),
+    Binary(String),
+
+    Char(String),
     Str(String),
 }

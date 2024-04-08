@@ -1,12 +1,11 @@
 use clap::Parser;
 
-use std::fs::OpenOptions;
-
 mod parser;
+use ariadne::{Color, Label, Report, ReportKind, Source};
 
-use parser::literals;
+use parser::literals::literals;
 
-use nom::error::convert_error;
+use chumsky::Parser as OtherParser;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -23,17 +22,24 @@ fn main() {
     //     .open(args.input_file)
     //     .expect("Could not open file");
 
-    let data = r#"."#;
-    let val = literals::literals(&data);
+    let src_file = "inner.comfy";
+    let src = r#" "\u1fqf" "#;
 
-    match val {
-        Ok(val) => {
-            println!("{:?}{:?}", val.1, val.0);
+    match literals().parse(src).into_result() {
+        Ok(ast) => {
+            println!("AST: {:#?}", ast);
         }
-        Err(nom::Err::Error(err) | nom::Err::Failure(err)) => {
-            println!("{}", convert_error(data, err));
-        }
-
-        _ => unreachable!(),
-    }
+        Err(parse_errs) => parse_errs.into_iter().for_each(|e| {
+            Report::build(ReportKind::Error, src_file, e.span().start)
+                .with_message(e.to_string())
+                .with_label(
+                    Label::new((src_file, e.span().into_range()))
+                        .with_message(e.reason().to_string())
+                        .with_color(Color::Red),
+                )
+                .finish()
+                .print((src_file, Source::from(&src)))
+                .unwrap()
+        }),
+    };
 }

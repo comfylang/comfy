@@ -1,117 +1,93 @@
+use chumsky::prelude::*;
 use comfy_types::Literals;
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, take},
-    character::complete::{anychar, char, digit0, digit1},
-    combinator::{map, opt, value},
-    error::VerboseError,
-    sequence::{delimited, preceded, tuple},
-    IResult,
-};
-use std::char;
 
-type LiteralsReturn<'a> = IResult<&'a str, Literals, VerboseError<&'a str>>;
+type ParseError<'a> = extra::Err<Rich<'a, char>>;
 
-fn int(input: &str) -> LiteralsReturn {
-    map(digit1, |s: &str| Literals::Int(s.parse().unwrap()))(input)
-}
+pub fn literals<'a>() -> impl Parser<'a, &'a str, Literals, ParseError<'a>> {
+    let numeric = {
+        let frac = just('.');
+        let pm = one_of("+-");
 
-fn float(input: &str) -> LiteralsReturn {
-    map(
-        alt((
-            tuple((digit0, char('.'), digit1)),
-            tuple((digit1, char('.'), digit0)),
-        )),
-        |(s, _, f)| Literals::Float(format!("{}.{}", s, f).parse().unwrap()),
-    )(input)
-}
+        let exp = just('e').or(just('E')).then(pm.or_not());
 
-fn bool(input: &str) -> LiteralsReturn {
-    alt((
-        value(Literals::True, tag("true")),
-        value(Literals::False, tag("false")),
-    ))(input)
-}
+        let decimal = pm
+            .or_not()
+            .then(text::int(10))
+            .then(frac.then(text::digits(10)).or_not())
+            .then(exp.then(text::digits(10)).or_not())
+            .to_slice()
+            .map(|s: &str| Literals::Decimal(s.to_owned()));
 
-fn parse_char(input: &str) -> IResult<&str, char, VerboseError<&str>> {
-    let (input, escaped) = opt(preceded(char('\\'), anychar))(input)?;
+        let binary = just("0b")
+            .or(just("0B"))
+            .then(text::digits(2))
+            .then(frac.then(text::digits(2)).or_not())
+            .to_slice()
+            .map(|s: &str| Literals::Binary(s.chars().skip(2).collect()));
 
-    if let Some(escaped) = escaped {
-        let (i, r) = match escaped {
-            'u' => {
-                let (input, hex) = take(4usize)(input)?;
-                let code = u32::from_str_radix(hex, 16).unwrap();
+        let octal = just("0o")
+            .or(just("0O"))
+            .then(text::digits(8))
+            .then(frac.then(text::digits(8)).or_not())
+            .to_slice()
+            .map(|s: &str| Literals::Octal(s.chars().skip(2).collect()));
 
-                (input, char::from_u32(code).unwrap())
-            }
+        let hex = just("0x")
+            .or(just("0X"))
+            .then(text::digits(16))
+            .then(frac.then(text::digits(16)).or_not())
+            .to_slice()
+            .map(|s: &str| Literals::Hex(s.chars().skip(2).collect()));
 
-            'x' => {
-                let (input, hex) = take(2usize)(input)?;
-                let code = u32::from_str_radix(hex, 16).unwrap();
+        choice((binary, octal, hex, decimal))
+    };
 
-                (input, char::from_u32(code).unwrap())
-            }
+    let boolean = just("true")
+        .map(|_| Literals::True)
+        .or(just("false").map(|_| Literals::False));
 
-            '0' => (input, '\0'),
-            'a' => (input, '\x07'),
-            'b' => (input, '\x08'),
-            't' => (input, '\t'),
-            'n' => (input, '\n'),
-            'v' => (input, '\x0B'),
-            'f' => (input, '\x0C'),
-            'r' => (input, '\r'),
-            'e' => (input, '\x1B'),
+    let textual = {
+        let escape = just('\\')
+            .ignored()
+            .then(choice((
+                just('\\').to(r#"\\"#.to_owned()),
+                just('/').to(r#"\/"#.to_owned()),
+                just('"').to(r#"\""#.to_owned()),
+                just('b').to(r#"\x08"#.to_owned()),
+                just('f').to(r#"\x0C"#.to_owned()),
+                just('n').to(r#"\n"#.to_owned()),
+                just('r').to(r#"\r"#.to_owned()),
+                just('t').to(r#"\t"#.to_owned()),
+                just('u')
+                    .ignore_then(text::digits(16).exactly(4).to_slice())
+                    .map(|s| format!("\\u{}", s)),
+                just('U')
+                    .ignore_then(text::digits(16).exactly(8).to_slice())
+                    .map(|s| format!("\\u{}", s)),
+                just('x')
+                    .ignore_then(text::digits(16).exactly(2).to_slice())
+                    .map(|s| format!("\\u{}", s)),
+            )))
+            .map(|c| c.1);
 
-            _ => (input, escaped),
-        };
+        let char_literal = escape
+            .clone()
+            .or(any().to_slice().map(ToString::to_string))
+            .delimited_by(just('\''), just('\''))
+            .map(|s: String| Literals::Char(s));
 
-        return Ok((i, r));
-    } else {
-        anychar(input)
-    }
-}
+        let string_literal = none_of("\\\"")
+            .to_slice()
+            .map(ToString::to_string)
+            .or(escape.clone())
+            .repeated()
+            .to_slice()
+            .map(ToString::to_string)
+            .delimited_by(just('"'), just('"'))
+            .map(|s: String| Literals::Str(s));
 
-fn parse_char_literal(input: &str) -> LiteralsReturn {
-    delimited(
-        char('\''),
-        map(parse_char, |s| Literals::Char(s)),
-        char('\''),
-    )(input)
-}
+        choice((char_literal, string_literal))
+    };
 
-fn parse_string_literal(input: &str) -> LiteralsReturn {
-    let res = char('\"')(input)?;
-
-    let mut i = res.0;
-    let mut r = String::new();
-
-    loop {
-        let (_, res) = opt(char('"'))(i)?;
-        if !res.is_none() {
-            break;
-        }
-
-        let (_, res) = opt(tag(r#"\""#))(i)?;
-        if !res.is_none() {
-            let res = take(2usize)(i)?;
-
-            i = res.0;
-            r.push_str(res.1);
-
-            continue;
-        }
-
-        let res = parse_char(i)?;
-
-        i = res.0;
-        r.push(res.1);
-    }
-
-    (i, _) = char('\"')(i)?;
-
-    Ok((i, Literals::Str(r)))
-}
-
-pub fn literals(input: &str) -> LiteralsReturn {
-    alt((parse_char_literal, parse_string_literal, bool, float, int))(input)
+    choice((textual, boolean, numeric)).padded()
 }
