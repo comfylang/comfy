@@ -1,0 +1,16 @@
+[package]
+name = "comfy-types"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["artegoser"]
+license = "MIT"
+description = "Comfy lang types"
+repository = "https://github.com/comfylang/comfy"
+readme = "./README.md"
+keywords = ["comfy", "comfy-lang", "types"]
+categories = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

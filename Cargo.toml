@@ -1,0 +1,5 @@
+[workspace]
+
+members = ["compiler", "parser", "types", "utils"]
+
+resolver = "2"

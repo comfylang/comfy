@@ -1,0 +1,16 @@
+[package]
+name = "comfy-parser"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["artegoser"]
+license = "MIT"
+description = "Comfy lang parser"
+repository = "https://github.com/comfylang/comfy"
+readme = "./README.md"
+keywords = ["comfy", "comfy-lang", "comfy-parser", "cli"]
+categories = ["command-line-utilities", "parser-implementations"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
