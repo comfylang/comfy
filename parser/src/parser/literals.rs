@@ -1,7 +1,7 @@
 use chumsky::prelude::*;
 use comfy_types::Literals;
 
-type ParseError<'a> = extra::Err<Rich<'a, char>>;
+use super::ParseError;
 
 pub fn literals<'a>() -> impl Parser<'a, &'a str, Literals, ParseError<'a>> {
     let numeric = {

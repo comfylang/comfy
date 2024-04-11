@@ -4,6 +4,7 @@ mod parser;
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
 use parser::literals::literals;
+use parser::types::types;
 
 use chumsky::Parser as OtherParser;
 
@@ -23,11 +24,11 @@ fn main() {
     //     .expect("Could not open file");
 
     let src_file = "inner.comfy";
-    let src = r#" "\u1fqf" "#;
+    let src = r#"&mut [ (MyType<bool, i32>, bool) ] "#;
 
-    match literals().parse(src).into_result() {
+    match types().parse(src).into_result() {
         Ok(ast) => {
-            println!("AST: {:#?}", ast);
+            println!("AST: {:?}", ast);
         }
         Err(parse_errs) => parse_errs.into_iter().for_each(|e| {
             Report::build(ReportKind::Error, src_file, e.span().start)

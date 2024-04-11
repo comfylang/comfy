@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Types {
     Bool,
 
@@ -28,19 +28,23 @@ pub enum Types {
     Never,
 
     // Sequence
-    Tuple,
-    Array,
-    Slice,
+    Tuple(Vec<Types>),
+    Array(Box<Types>, u64),
+    Slice(Box<Types>),
 
     // User-defined
-    Struct(String),
-    Enum(String),
-    Union(String),
+    Custom(String),
+    // Struct(String),
+    // Enum(String),
+    // Union(String),
 
-    // Pointer
+    // Pointers
     Pointer(Box<Types>),
+    MutableRef(Box<Types>),
     Reference(Box<Types>),
-    Mutable(Box<Types>),
+
+    // Generic
+    Generic(String, Vec<Types>),
 }
 
 #[derive(Debug, Clone)]
