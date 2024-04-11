@@ -3,8 +3,7 @@ use clap::Parser;
 mod parser;
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
-use parser::literals::literals;
-use parser::types::types;
+use parser::expressions::expressions;
 
 use chumsky::Parser as OtherParser;
 
@@ -24,11 +23,16 @@ fn main() {
     //     .expect("Could not open file");
 
     let src_file = "inner.comfy";
-    let src = r#"&mut [ (MyType<bool, i32>, bool) ] "#;
+    let src = r#" 
+        [
+            [0x1, 2, 3],
+            [4, 5, 6]
+        ] 
+    "#;
 
-    match types().parse(src).into_result() {
+    match expressions().parse(src).into_result() {
         Ok(ast) => {
-            println!("AST: {:?}", ast);
+            println!("AST: {:#?}", ast);
         }
         Err(parse_errs) => parse_errs.into_iter().for_each(|e| {
             Report::build(ReportKind::Error, src_file, e.span().start)

@@ -1,7 +1,7 @@
 use chumsky::prelude::*;
 use comfy_types::Types;
 
-use super::{common::id, ParseError};
+use super::{common::ident, ParseError};
 
 pub fn types<'a>() -> impl Parser<'a, &'a str, Types, ParseError<'a>> {
     let bool = just("bool").to(Types::Bool);
@@ -24,7 +24,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Types, ParseError<'a>> {
     let unknown = choice((just("void").to(Types::Void), just("never").to(Types::Never)));
 
     let simple_types = choice((bool, numeric, textual, unknown)).boxed();
-    let custom = id().map(|s| Types::Custom(s)).boxed();
+    let custom = ident().map(|s| Types::Custom(s)).boxed();
 
     let complex_types = recursive(|complex| {
         let t = simple_types.clone().or(complex).or(custom);
@@ -65,7 +65,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Types, ParseError<'a>> {
             .then(t.clone())
             .map(|(_, ty)| Types::Reference(Box::new(ty)));
 
-        let generic = id()
+        let generic = ident()
             .then(
                 t.separated_by(just(',').padded())
                     .allow_trailing()

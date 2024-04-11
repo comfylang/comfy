@@ -1,3 +1,5 @@
+use crate::Expr;
+
 #[derive(Debug, Clone)]
 pub enum Types {
     Bool,
@@ -49,6 +51,7 @@ pub enum Types {
 
 #[derive(Debug, Clone)]
 pub enum Literals {
+    // Boolean
     True,
     False,
 
@@ -58,6 +61,7 @@ pub enum Literals {
     Octal(String),
     Binary(String),
 
+    // Textual
     Char(String),
     Str(String),
 }
