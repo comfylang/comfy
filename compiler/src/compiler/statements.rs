@@ -1,73 +1,93 @@
-use comfy_types::{Argument, Expr, Statements};
+use comfy_types::{Argument, Expr, Statements, Type};
+use comfy_utils::inc_indent;
 
-use super::{CompileResult, ToC};
+use crate::compiler::CompileError;
+
+use super::{CompileResult, State, ToC};
+
+fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
+    let cty = ty.to_c(st)?;
+
+    let is_default = if let Expr::Unknown = expr {
+        false
+    } else {
+        true
+    };
+
+    let type_name = format!("{} {}", cty.0, name);
+
+    let arr_desc = if cty.1 .0 {
+        let size = match cty.1 .1 {
+            Some(size) => size.to_string(),
+            None => "".to_owned(),
+        };
+
+        format!("[{}]", size)
+    } else {
+        "".to_owned()
+    };
+
+    let assign_default = if is_default {
+        format!(" = {}", expr.to_c(st)?)
+    } else {
+        "".to_owned()
+    };
+
+    Ok(format!("{}{}{}", type_name, arr_desc, assign_default,))
+}
 
 impl ToC<String> for Statements {
-    fn to_c(&self) -> CompileResult<String> {
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
-            Statements::ExpressionStatement(e) => format!("{};", e.to_c()?),
+            Statements::ExpressionStatement(e) => format!("{};", e.to_c(st)?),
             Statements::LetStatement(name, ty, expr) => {
-                let cty = ty.to_c()?;
+                format!("{};", typed_name(st, name, ty, expr)?)
+            }
+            Statements::FunctionDeclaration(_access_modifier, name, args, ty, body) => {
+                let cty = ty.to_c(st)?;
 
                 if cty.1 .0 {
-                    let size = match cty.1 .1 {
-                        Some(size) => size.to_string(),
-                        None => "".to_owned(),
-                    };
-
-                    format!("{} {}[{}] = {};", cty.0, name, size, expr.to_c()?)
-                } else {
-                    format!("{} {} = {};", cty.0, name, expr.to_c()?)
+                    // TODO: support arrays
+                    return Err(CompileError("Cannot return arrays".to_owned()));
                 }
-            }
-            Statements::FunctionDeclaration(access_modifier, name, args, ty, body) => {
-                // let cty = ty.to_c()?;
 
-                todo!()
+                let cargs = args.to_c(st)?;
+                let cbody = body.to_c(st)?;
+
+                format!(
+                    "{} {}({}) {{\n{}\n}}\n",
+                    cty.0,
+                    name,
+                    cargs,
+                    inc_indent(cbody)
+                )
             }
+            Statements::ReturnStatement(e) => format!("return {};", e.to_c(st)?),
         })
     }
 }
 
 impl ToC<String> for Vec<Statements> {
-    fn to_c(&self) -> CompileResult<String> {
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
-            .map(|s| s.to_c())
+            .map(|s| s.to_c(st))
             .collect::<Result<Vec<_>, _>>()?
             .join("\n"))
     }
 }
 
 impl ToC<String> for Argument {
-    fn to_c(&self) -> CompileResult<String> {
-        let is_default = if let Expr::Unknown = self.2 {
-            true
-        } else {
-            false
-        };
-
-        let ty = self.1.to_c()?;
-        let name = &self.0;
-
-        Ok(format!(
-            "{} {}{}",
-            ty.0,
-            name,
-            if is_default {
-                format!(" = {}", self.2.to_c()?)
-            } else {
-                "".to_owned()
-            }
-        ))
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
+        typed_name(st, &self.0, &self.1, &self.2)
     }
 }
 
 impl ToC<String> for Vec<Argument> {
-    fn to_c(&self) -> CompileResult<String> {
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
-            .map(|a| a.to_c())
+            .map(|a| a.to_c(st))
             .collect::<Result<Vec<_>, _>>()?
             .join(", "))
     }

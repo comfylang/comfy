@@ -5,6 +5,7 @@ pub enum Statements {
     ExpressionStatement(Expr),
     LetStatement(String, Type, Expr),
     FunctionDeclaration(AccessModifier, String, Vec<Argument>, Type, Vec<Statements>),
+    ReturnStatement(Expr),
 }
 
 #[derive(Debug, Clone)]

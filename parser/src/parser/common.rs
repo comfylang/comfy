@@ -24,6 +24,14 @@ pub fn type_descriptor<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
         .boxed()
 }
 
+pub fn fn_type_descriptor<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
+    justp("->")
+        .ignore_then(types().padded())
+        .or_not()
+        .map(|t| t.unwrap_or(Type::Unknown))
+        .boxed()
+}
+
 pub fn assignment<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
     justp("=").ignore_then(expressions())
 }

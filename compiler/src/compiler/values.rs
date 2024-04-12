@@ -1,9 +1,9 @@
 use comfy_types::{Literal, Type};
 
-use super::{CompileError, CompileResult, ToC, TypeInfo};
+use super::{CompileResult, State, ToC, TypeInfo};
 
 impl ToC<(String, TypeInfo)> for Type {
-    fn to_c(&self) -> CompileResult<(String, TypeInfo)> {
+    fn to_c(&self, st: &mut State) -> CompileResult<(String, TypeInfo)> {
         let not_arr = TypeInfo(false, None);
         let empty_arr = TypeInfo(true, None);
 
@@ -26,19 +26,19 @@ impl ToC<(String, TypeInfo)> for Type {
             Type::Never => ("void".to_owned(), not_arr),
             Type::Unknown => ("void".to_owned(), not_arr),
             Type::Tuple(_) => todo!(),
-            Type::Array(ty, size) => (format!("{}", ty.to_c()?.0), TypeInfo(true, Some(*size))),
-            Type::Slice(ty) => (format!("{}", ty.to_c()?.0), empty_arr),
+            Type::Array(ty, size) => (format!("{}", ty.to_c(st)?.0), TypeInfo(true, Some(*size))),
+            Type::Slice(ty) => (format!("{}", ty.to_c(st)?.0), empty_arr),
             Type::Custom(name) => (name.into(), not_arr),
-            Type::Pointer(ty) => (format!("{}*", ty.to_c()?.0), not_arr),
-            Type::MutableRef(ty) => (format!("{}&", ty.to_c()?.0), not_arr),
-            Type::Reference(ty) => (format!("{}&", ty.to_c()?.0), not_arr),
+            Type::Pointer(ty) => (format!("{}*", ty.to_c(st)?.0), not_arr),
+            Type::MutableRef(ty) => (format!("{}&", ty.to_c(st)?.0), not_arr),
+            Type::Reference(ty) => (format!("{}&", ty.to_c(st)?.0), not_arr),
             Type::Generic(_, _) => todo!(),
         })
     }
 }
 
 impl ToC<String> for Literal {
-    fn to_c(&self) -> CompileResult<String> {
+    fn to_c(&self, _: &mut State) -> CompileResult<String> {
         Ok(match self {
             Literal::True => "true".to_owned(),
             Literal::False => "false".to_owned(),

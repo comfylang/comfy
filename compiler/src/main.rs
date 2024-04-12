@@ -23,11 +23,17 @@ fn main() {
 
     let src_file = "inner.comfy";
     let src = r#"
+
+    fn sum(a: i8, b: i8) -> i8 {
+        a + b
+    }
+
     fn main() {
         let a: i8 = 1; 
         let b: i8 = 2; 
-        printf("%d", a + b*2);
+        printf("%d", sum(a, b));
     }
+    
     "#;
 
     match statements().parse(src).into_result() {

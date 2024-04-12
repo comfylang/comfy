@@ -1,26 +1,26 @@
 use comfy_types::Expr;
 
-use super::{CompileError, CompileResult, ToC};
+use super::{CompileError, CompileResult, Compiler, State, ToC};
 
 impl ToC<String> for Expr {
-    fn to_c(&self) -> CompileResult<String> {
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
-            Expr::Literal(l) => l.to_c()?,
+            Expr::Literal(l) => l.to_c(st)?,
             Expr::Type(t) => {
-                let t = t.to_c()?;
+                let ct = t.to_c(st)?;
 
-                if t.1 .0 {
+                if ct.1 .0 {
                     return Err(CompileError("Cannot cast to array-like type".to_owned()));
                 }
 
-                t.0
+                ct.0
             }
             Expr::Ident(i) => i.into(),
-            Expr::Add(r, l) => format!("({} + {})", l.to_c()?, r.to_c()?),
-            Expr::Sub(l, r) => format!("({} - {})", l.to_c()?, r.to_c()?),
-            Expr::Mul(l, r) => format!("({} * {})", l.to_c()?, r.to_c()?),
-            Expr::Div(l, r) => format!("({} / {})", l.to_c()?, r.to_c()?),
-            Expr::Mod(l, r) => format!("({} % {})", l.to_c()?, r.to_c()?),
+            Expr::Add(r, l) => format!("({} + {})", l.to_c(st)?, r.to_c(st)?),
+            Expr::Sub(l, r) => format!("({} - {})", l.to_c(st)?, r.to_c(st)?),
+            Expr::Mul(l, r) => format!("({} * {})", l.to_c(st)?, r.to_c(st)?),
+            Expr::Div(l, r) => format!("({} / {})", l.to_c(st)?, r.to_c(st)?),
+            Expr::Mod(l, r) => format!("({} % {})", l.to_c(st)?, r.to_c(st)?),
             Expr::Neg(_) => todo!(),
             Expr::Pos(_) => todo!(),
             Expr::IncR(_) => todo!(),
@@ -46,7 +46,7 @@ impl ToC<String> for Expr {
             Expr::Shl(l, r) => todo!(),
             Expr::Shr(l, r) => todo!(),
             Expr::Member(l, r) => todo!(),
-            Expr::Cast(l, r) => format!("(({}) {} )", r.to_c()?, l.to_c()?),
+            Expr::Cast(l, r) => format!("(({}) {} )", r.to_c(st)?, l.to_c(st)?),
             Expr::Size(_) => todo!(),
             Expr::Align(_) => todo!(),
             Expr::Assign(l, r) => todo!(),
@@ -60,7 +60,7 @@ impl ToC<String> for Expr {
             Expr::BitAndAssign(l, r) => todo!(),
             Expr::BitXorAssign(l, r) => todo!(),
             Expr::BitOrAssign(l, r) => todo!(),
-            Expr::Call(l, r) => format!("{}({})", l.to_c()?, r.to_owned().to_c()?),
+            Expr::Call(l, r) => format!("{}({})", l.to_c(st)?, r.to_owned().to_c(st)?),
             Expr::ArrMember(_) => todo!(),
             Expr::Tuple(_) => todo!(),
             Expr::Array(_) => todo!(),
@@ -70,10 +70,10 @@ impl ToC<String> for Expr {
 }
 
 impl ToC<String> for Vec<Expr> {
-    fn to_c(&self) -> CompileResult<String> {
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
-            .map(|s| s.to_c())
+            .map(|s| s.to_c(st))
             .collect::<Result<Vec<_>, _>>()?
             .join(","))
     }
