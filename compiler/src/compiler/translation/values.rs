@@ -20,6 +20,8 @@ impl ToC<(String, TypeInfo)> for Type {
             Type::F32 => ("float".to_owned(), not_arr),
             Type::F64 => ("double".to_owned(), not_arr),
             Type::F128 => ("long double".to_owned(), not_arr),
+            Type::Int => ("int".to_owned(), not_arr),
+            Type::Uint => ("unsigned int".to_owned(), not_arr),
             Type::Char => ("char".to_owned(), not_arr),
             Type::Str => ("char".to_owned(), empty_arr),
             Type::Void => ("void".to_owned(), not_arr),

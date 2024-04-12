@@ -1,9 +1,7 @@
 use comfy_types::{Argument, Expr, Statements, Type};
 use comfy_utils::inc_indent;
 
-use crate::compiler::CompileError;
-
-use super::{CompileResult, State, ToC};
+use super::{CompileError, CompileResult, State, ToC};
 
 fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
     let cty = ty.to_c(st)?;

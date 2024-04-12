@@ -21,6 +21,8 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
         just("f32").to(Type::F32),
         just("f64").to(Type::F64),
         just("f128").to(Type::F128),
+        just("int").to(Type::Int),
+        just("uint").to(Type::Uint),
     ));
 
     let textual = choice((just("char").to(Type::Char), just("str").to(Type::Str)));

@@ -15,6 +15,10 @@ pub enum Type {
     U32,
     U64,
 
+    // Std
+    Int,
+    Uint,
+
     // Float
     F32,
     F64,

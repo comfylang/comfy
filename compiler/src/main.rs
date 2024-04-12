@@ -13,6 +13,9 @@ mod compiler;
 struct Args {
     #[clap(short, long)]
     input_file: String,
+
+    #[clap(short, long)]
+    output_file: String,
 }
 
 fn main() {
@@ -28,19 +31,23 @@ fn main() {
         a + b
     }
 
-    fn main() {
+    fn main() -> int {
         let a: i8 = 1; 
         let b: i8 = 2; 
         printf("%d", sum(a, b));
-    }
     
+        0
+    }
+
     "#;
+
+    let output_file = "out.exe";
 
     match statements().parse(src).into_result() {
         Ok(ast) => {
             let mut compiler = Compiler::new(ast);
 
-            let compiled = compiler.compile();
+            let compiled = compiler.compile(output_file);
 
             match compiled {
                 Ok(compiled) => {
