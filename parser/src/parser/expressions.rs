@@ -2,6 +2,7 @@ use chumsky::pratt::*;
 use chumsky::prelude::*;
 use comfy_types::Expr;
 
+use super::common::justp;
 use super::types::types;
 use super::{common::ident, literals::literals, ParseError};
 
@@ -11,45 +12,45 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
     let ty = types().map(|t| Expr::Type(t)).padded().boxed();
 
     let op = |c: &'a str| just(c).padded();
+    let justp = |c: &'a str| justp(c).boxed();
 
     let complex_expr = recursive(|expr| {
         let call = id
             .clone()
             .then(
                 expr.clone()
-                    .separated_by(just(','))
+                    .separated_by(justp(","))
                     .allow_trailing()
                     .collect::<Vec<_>>()
-                    .delimited_by(just('(').padded(), just(')').padded()),
+                    .delimited_by(justp("("), justp(")")),
             )
             .map(|(f, args)| Expr::Call(b(f), args));
 
-        let arr_member = just("[")
-            .padded()
+        let arr_member = justp("[")
             .then(expr.clone())
-            .then(just("]").padded())
+            .then(justp("]"))
             .map(|r| Expr::ArrMember(b(r.0 .1)));
 
         let arr_expr = expr
             .clone()
-            .separated_by(just(',').padded())
+            .separated_by(justp(","))
             .allow_trailing()
             .collect()
             .padded()
-            .delimited_by(just('['), just(']'))
+            .delimited_by(justp("["), justp("]"))
             .map(|s| Expr::Array(s));
 
         let tuple_expr = expr
             .clone()
-            .separated_by(just(',').padded())
+            .separated_by(justp(","))
             .allow_trailing()
             .collect()
             .padded()
-            .delimited_by(just('('), just(')'))
+            .delimited_by(justp("("), justp(")"))
             .map(|s| Expr::Tuple(s));
 
         let atom = lit
-            .or(expr.delimited_by(just("("), just(")")))
+            .or(expr.delimited_by(justp("("), justp(")")))
             .or(ty)
             .or(call)
             .or(arr_member)
@@ -58,7 +59,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             .or(id)
             .padded();
 
-        let pr1 = atom.pratt((
+        atom.pratt((
             //
             //
             infix(left(15), op("."), |l, r| Expr::Member(b(l), b(r))),
@@ -97,9 +98,8 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             infix(left(10), op("<="), |l, r| Expr::Le(b(l), b(r))),
             infix(left(10), op(">"), |l, r| Expr::Gt(b(l), b(r))),
             infix(left(10), op(">="), |l, r| Expr::Ge(b(l), b(r))),
-        ));
-
-        let pr2 = pr1.pratt((
+        ))
+        .pratt((
             infix(left(9), op("=="), |l, r| Expr::Eq(b(l), b(r))),
             infix(left(9), op("!="), |l, r| Expr::Ne(b(l), b(r))),
             //
@@ -124,9 +124,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             infix(right(3), op("&="), |l, r| Expr::BitAndAssign(b(l), b(r))),
             infix(right(3), op("^="), |l, r| Expr::BitXorAssign(b(l), b(r))),
             infix(right(3), op("|="), |l, r| Expr::BitOrAssign(b(l), b(r))),
-        ));
-
-        pr2
+        ))
     });
 
     complex_expr.padded()

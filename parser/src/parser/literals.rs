@@ -1,9 +1,9 @@
 use chumsky::prelude::*;
-use comfy_types::Literals;
+use comfy_types::Literal;
 
 use super::ParseError;
 
-pub fn literals<'a>() -> impl Parser<'a, &'a str, Literals, ParseError<'a>> {
+pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
     let numeric = {
         let frac = just('.');
         let pm = one_of("+-");
@@ -16,35 +16,30 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literals, ParseError<'a>> {
             .then(frac.then(text::digits(10)).or_not())
             .then(exp.then(text::digits(10)).or_not())
             .to_slice()
-            .map(|s: &str| Literals::Decimal(s.to_owned()));
+            .map(|s: &str| Literal::Decimal(s.to_owned()));
 
         let binary = just("0b")
-            .or(just("0B"))
-            .then(text::digits(2))
-            .then(frac.then(text::digits(2)).or_not())
-            .to_slice()
-            .map(|s: &str| Literals::Binary(s.chars().skip(2).collect()));
+            .or(just("0b"))
+            .ignore_then(text::digits(2).to_slice())
+            .map(|s: &str| Literal::Binary(s.to_owned()));
 
         let octal = just("0o")
             .or(just("0O"))
-            .then(text::digits(8))
-            .then(frac.then(text::digits(8)).or_not())
-            .to_slice()
-            .map(|s: &str| Literals::Octal(s.chars().skip(2).collect()));
+            .ignore_then(text::digits(8).to_slice())
+            .map(|s: &str| Literal::Octal(s.to_owned()));
 
         let hex = just("0x")
             .or(just("0X"))
-            .then(text::digits(16))
-            .then(frac.then(text::digits(16)).or_not())
-            .to_slice()
-            .map(|s: &str| Literals::Hex(s.chars().skip(2).collect()));
+            .ignore_then(text::digits(16).to_slice())
+            .map(|s: &str| Literal::Hex(s.to_owned()));
 
         choice((binary, octal, hex, decimal))
     };
 
-    let boolean = just("true")
-        .map(|_| Literals::True)
-        .or(just("false").map(|_| Literals::False));
+    let boolean = choice((
+        just("true").to(Literal::True),
+        just("false").to(Literal::False),
+    ));
 
     let textual = {
         let escape = just('\\')
@@ -74,7 +69,7 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literals, ParseError<'a>> {
             .clone()
             .or(any().to_slice().map(ToString::to_string))
             .delimited_by(just('\''), just('\''))
-            .map(|s: String| Literals::Char(s));
+            .map(|s: String| Literal::Char(s));
 
         let string_literal = none_of("\\\"")
             .to_slice()
@@ -84,7 +79,7 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literals, ParseError<'a>> {
             .to_slice()
             .map(ToString::to_string)
             .delimited_by(just('"'), just('"'))
-            .map(|s: String| Literals::Str(s));
+            .map(|s: String| Literal::Str(s));
 
         choice((char_literal, string_literal))
     };

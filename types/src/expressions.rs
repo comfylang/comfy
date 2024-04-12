@@ -1,10 +1,10 @@
-use crate::{Literals, Types};
+use crate::{Literal, Type};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
     // Atomic
-    Literal(Literals),
-    Type(Types),
+    Literal(Literal),
+    Type(Type),
     Ident(String),
 
     // Arithmetic
@@ -81,4 +81,6 @@ pub enum Expr {
     // Sequence
     Tuple(Vec<Self>),
     Array(Vec<Self>),
+
+    Unknown, // For variable initialization
 }

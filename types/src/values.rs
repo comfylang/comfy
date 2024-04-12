@@ -1,7 +1,7 @@
 use crate::Expr;
 
 #[derive(Debug, Clone)]
-pub enum Types {
+pub enum Type {
     Bool,
 
     // Numeric
@@ -28,11 +28,12 @@ pub enum Types {
     // Unknown
     Void,
     Never,
+    Unknown, // For parse only
 
     // Sequence
-    Tuple(Vec<Types>),
-    Array(Box<Types>, u64),
-    Slice(Box<Types>),
+    Tuple(Vec<Type>),
+    Array(Box<Type>, u64),
+    Slice(Box<Type>),
 
     // User-defined
     Custom(String),
@@ -41,16 +42,16 @@ pub enum Types {
     // Union(String),
 
     // Pointers
-    Pointer(Box<Types>),
-    MutableRef(Box<Types>),
-    Reference(Box<Types>),
+    Pointer(Box<Type>),
+    MutableRef(Box<Type>),
+    Reference(Box<Type>),
 
     // Generic
-    Generic(String, Vec<Types>),
+    Generic(String, Vec<Type>),
 }
 
 #[derive(Debug, Clone)]
-pub enum Literals {
+pub enum Literal {
     // Boolean
     True,
     False,

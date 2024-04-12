@@ -3,7 +3,7 @@ use clap::Parser;
 mod parser;
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
-use parser::expressions::expressions;
+use parser::statements;
 
 use chumsky::Parser as OtherParser;
 
@@ -23,14 +23,15 @@ fn main() {
     //     .expect("Could not open file");
 
     let src_file = "inner.comfy";
-    let src = r#" 
-        [
-            [0x1, 2, 3],
-            [4, 5, 6]
-        ] 
+    let src = r#"
+    fn main() {
+        let a: i8 = 1; 
+        let b = 2; 
+        printf("%d", a + b);
+    }
     "#;
 
-    match expressions().parse(src).into_result() {
+    match statements().parse(src).into_result() {
         Ok(ast) => {
             println!("AST: {:#?}", ast);
         }
