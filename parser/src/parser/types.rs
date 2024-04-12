@@ -20,6 +20,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
         just("u64").to(Type::U64),
         just("f32").to(Type::F32),
         just("f64").to(Type::F64),
+        just("f128").to(Type::F128),
     ));
 
     let textual = choice((just("char").to(Type::Char), just("str").to(Type::Str)));

@@ -15,7 +15,6 @@ pub enum Expr {
     Mul(Box<Self>, Box<Self>),
     Div(Box<Self>, Box<Self>),
     Mod(Box<Self>, Box<Self>),
-    Pow(Box<Self>, Box<Self>),
 
     // Unary
     Neg(Box<Self>),

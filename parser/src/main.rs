@@ -1,3 +1,5 @@
+use std::fs::{self, read_to_string, OpenOptions};
+
 use clap::Parser;
 
 mod parser;
@@ -5,7 +7,7 @@ use ariadne::{Color, Label, Report, ReportKind, Source};
 
 use parser::statements;
 
-use chumsky::Parser as OtherParser;
+use chumsky::Parser as ChumskyParser;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -15,23 +17,12 @@ struct Args {
 }
 
 fn main() {
-    // let args = Args::parse();
+    let args = Args::parse();
 
-    // let file = OpenOptions::new()
-    //     .read(true)
-    //     .open(args.input_file)
-    //     .expect("Could not open file");
+    let src_file = &args.input_file;
+    let src = fs::read_to_string(src_file).expect("Could not read file");
 
-    let src_file = "inner.comfy";
-    let src = r#"
-    fn main() {
-        let a: i8 = 1; 
-        let b = 2; 
-        printf("%d", a + b);
-    }
-    "#;
-
-    match statements().parse(src).into_result() {
+    match statements().parse(&src).into_result() {
         Ok(ast) => {
             println!("AST: {:#?}", ast);
         }

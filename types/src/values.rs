@@ -1,5 +1,3 @@
-use crate::Expr;
-
 #[derive(Debug, Clone)]
 pub enum Type {
     Bool,
@@ -20,6 +18,7 @@ pub enum Type {
     // Float
     F32,
     F64,
+    F128,
 
     // Textual
     Char,
