@@ -1,9 +1,9 @@
 use std::{
     fs,
-    process::{self, Command, Stdio},
+    process::{Command, Stdio},
 };
 
-use super::{CompileError, CompileResult};
+use super::{CompileResult, Error};
 
 struct ClangArgs {
     input_file: String,
@@ -25,7 +25,7 @@ pub fn compile(src: &str, output_file: String) -> CompileResult<()> {
     res
 }
 
-fn run_clang(clang_args: ClangArgs) -> Result<(), CompileError> {
+fn run_clang(clang_args: ClangArgs) -> Result<(), Error> {
     let mut command = Command::new(clang_resolve());
 
     let mut args: Vec<&str> = vec![];
@@ -40,13 +40,18 @@ fn run_clang(clang_args: ClangArgs) -> Result<(), CompileError> {
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
 
-    let output = command.output().expect(&format!(
-        "Failed to execute clang++ command, are you sure it's installed?"
-    ));
+    let output = command.output();
+
+    let output = match output {
+        Ok(output) => output,
+        Err(e) => {
+            return Err(Error::Clang(format!("Failed to execute clang: '{e}'")));
+        }
+    };
 
     if !output.status.success() {
         let error_message = String::from_utf8_lossy(&output.stderr);
-        Err(CompileError(format!("Compilation failed: {error_message}")))
+        Err(Error::Clang(format!("Compilation failed: {error_message}")))
     } else {
         Ok(())
     }

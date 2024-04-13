@@ -7,7 +7,7 @@ pub enum Expr {
     // Atomic
     Literal(Literal),
     Type(Type),
-    Ident(String),
+    Ident(String, SimpleSpan),
 
     // Arithmetic
 

@@ -7,7 +7,10 @@ use super::types::types;
 use super::{common::ident, literals::literals, ParseError};
 
 pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
-    let id = ident().map(|s| Expr::Ident(s)).padded().boxed();
+    let id = ident()
+        .map_with(|s, e| Expr::Ident(s, e.span()))
+        .padded()
+        .boxed();
     let lit = literals().map(|l| Expr::Literal(l)).padded().boxed();
     let ty = types().map(|t| Expr::Type(t)).padded().boxed();
 

@@ -1,7 +1,10 @@
+use chumsky::span::SimpleSpan;
 use comfy_types::{Argument, Expr, Statements, Type};
 use comfy_utils::inc_indent;
 
-use super::{CompileError, CompileResult, State, ToC};
+use crate::compiler::Error;
+
+use super::{ComfyType, CompileResult, State};
 
 fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
     let cty = ty.to_c(st)?;
@@ -34,11 +37,11 @@ fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResu
     Ok(format!("{}{}{}", type_name, arr_desc, assign_default,))
 }
 
-impl ToC<String> for Statements {
+impl ComfyType<String> for Statements {
     fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
-            Statements::ExpressionStatement(e, s) => format!("{};", e.to_c(st)?),
-            Statements::LetStatement(name, ty, expr, s) => {
+            Statements::ExpressionStatement(e, _) => format!("{};", e.to_c(st)?),
+            Statements::LetStatement(name, ty, expr, _) => {
                 format!("{};", typed_name(st, name, ty, expr)?)
             }
             Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, s) => {
@@ -46,7 +49,7 @@ impl ToC<String> for Statements {
 
                 if cty.1 .0 {
                     // TODO: support arrays
-                    return Err(CompileError("Cannot return arrays".to_owned()));
+                    return Err(Error::Compile("Cannot return arrays".to_owned(), ty.span()));
                 }
 
                 let cargs = args.to_c(st)?;
@@ -60,12 +63,21 @@ impl ToC<String> for Statements {
                     inc_indent(cbody)
                 )
             }
-            Statements::ReturnStatement(e, s) => format!("return {};", e.to_c(st)?),
+            Statements::ReturnStatement(e, _) => format!("return {};", e.to_c(st)?),
         })
+    }
+
+    fn span(&self) -> SimpleSpan {
+        match self {
+            Statements::ExpressionStatement(_, s) => *s,
+            Statements::LetStatement(_, _, _, s) => *s,
+            Statements::FunctionDeclaration(_, _, _, _, _, s) => *s,
+            Statements::ReturnStatement(_, s) => *s,
+        }
     }
 }
 
-impl ToC<String> for Vec<Statements> {
+impl ComfyType<String> for Vec<Statements> {
     fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
@@ -73,20 +85,38 @@ impl ToC<String> for Vec<Statements> {
             .collect::<Result<Vec<_>, _>>()?
             .join("\n"))
     }
-}
 
-impl ToC<String> for Argument {
-    fn to_c(&self, st: &mut State) -> CompileResult<String> {
-        typed_name(st, &self.0, &self.1, &self.2)
+    fn span(&self) -> SimpleSpan {
+        let start = self.first().unwrap().span().start;
+        let end = self.last().unwrap().span().end;
+
+        SimpleSpan::new(start, end)
     }
 }
 
-impl ToC<String> for Vec<Argument> {
+impl ComfyType<String> for Argument {
+    fn to_c(&self, st: &mut State) -> CompileResult<String> {
+        typed_name(st, &self.0, &self.1, &self.2)
+    }
+
+    fn span(&self) -> SimpleSpan {
+        self.3
+    }
+}
+
+impl ComfyType<String> for Vec<Argument> {
     fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
             .map(|a| a.to_c(st))
             .collect::<Result<Vec<_>, _>>()?
             .join(", "))
+    }
+
+    fn span(&self) -> SimpleSpan {
+        let start = self.first().unwrap().span().start;
+        let end = self.last().unwrap().span().end;
+
+        SimpleSpan::new(start, end)
     }
 }

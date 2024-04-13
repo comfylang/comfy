@@ -1,8 +1,9 @@
+use chumsky::span::SimpleSpan;
 use comfy_types::{Literal, Type};
 
-use super::{CompileResult, State, ToC, TypeInfo};
+use super::{ComfyType, CompileResult, State, TypeInfo};
 
-impl ToC<(String, TypeInfo)> for Type {
+impl ComfyType<(String, TypeInfo)> for Type {
     fn to_c(&self, st: &mut State) -> CompileResult<(String, TypeInfo)> {
         let not_arr = TypeInfo(false, None);
         let empty_arr = TypeInfo(true, None);
@@ -39,9 +40,41 @@ impl ToC<(String, TypeInfo)> for Type {
             Type::Generic(_, _, _) => todo!(),
         })
     }
+
+    fn span(&self) -> SimpleSpan {
+        match self {
+            Type::Bool(s) => *s,
+            Type::I8(s) => *s,
+            Type::I16(s) => *s,
+            Type::I32(s) => *s,
+            Type::I64(s) => *s,
+            Type::U8(s) => *s,
+            Type::U16(s) => *s,
+            Type::U32(s) => *s,
+            Type::U64(s) => *s,
+            Type::Int(s) => *s,
+            Type::Uint(s) => *s,
+            Type::F32(s) => *s,
+            Type::F64(s) => *s,
+            Type::F128(s) => *s,
+            Type::Char(s) => *s,
+            Type::Str(s) => *s,
+            Type::Void(s) => *s,
+            Type::Never(s) => *s,
+            Type::Unknown => SimpleSpan::new(0, 0),
+            Type::Tuple(_, s) => *s,
+            Type::Array(_, _, s) => *s,
+            Type::Slice(_, s) => *s,
+            Type::Custom(_, s) => *s,
+            Type::Pointer(_, s) => *s,
+            Type::MutableRef(_, s) => *s,
+            Type::Reference(_, s) => *s,
+            Type::Generic(_, _, s) => *s,
+        }
+    }
 }
 
-impl ToC<String> for Literal {
+impl ComfyType<String> for Literal {
     fn to_c(&self, _: &mut State) -> CompileResult<String> {
         Ok(match self {
             Literal::True(_) => "true".to_owned(),
@@ -53,5 +86,18 @@ impl ToC<String> for Literal {
             Literal::Char(v, _) => format!("'{}'", v),
             Literal::Str(v, _) => format!("\"{}\"", v),
         })
+    }
+
+    fn span(&self) -> SimpleSpan {
+        match self {
+            Literal::True(s) => *s,
+            Literal::False(s) => *s,
+            Literal::Decimal(_, s) => *s,
+            Literal::Hex(_, s) => *s,
+            Literal::Octal(_, s) => *s,
+            Literal::Binary(_, s) => *s,
+            Literal::Char(_, s) => *s,
+            Literal::Str(_, s) => *s,
+        }
     }
 }

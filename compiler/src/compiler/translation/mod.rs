@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use chumsky::span::SimpleSpan;
 use comfy_types::Ast;
 
 pub mod access_modifier;
@@ -7,14 +8,17 @@ pub mod expression;
 pub mod statements;
 pub mod values;
 
-pub trait ToC<T> {
-    fn to_c(&self, compiler: &mut State) -> Result<T, CompileError>;
+pub trait ComfyType<T> {
+    fn to_c(&self, compiler: &mut State) -> CompileResult<T>;
+    fn span(&self) -> SimpleSpan;
 }
 
-#[derive(Debug)]
-pub struct CompileError(pub String);
+pub enum Error {
+    Compile(String, SimpleSpan),
+    Clang(String),
+}
 
-pub type CompileResult<T> = Result<T, CompileError>;
+pub type CompileResult<T> = Result<T, Error>;
 
 #[derive(Debug, Clone)]
 pub struct Compiler {
