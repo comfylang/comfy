@@ -1,4 +1,4 @@
-use std::fs::{self, read_to_string, OpenOptions};
+use std::fs::{self};
 
 use clap::Parser;
 

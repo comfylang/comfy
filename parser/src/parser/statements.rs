@@ -7,6 +7,7 @@ use super::common::assignment;
 use super::common::decl_args;
 use super::common::fn_type_descriptor;
 use super::common::justp;
+use super::common::pad;
 use super::common::type_descriptor;
 use super::ParseError;
 use super::{expressions, ident};
@@ -18,7 +19,7 @@ pub fn statements<'a>() -> impl Parser<'a, &'a str, Vec<Statements>, ParseError<
             .map_with(|expr, e| Statements::ExpressionStatement(expr, e.span()));
 
         let let_statement = justp("let")
-            .ignore_then(ident().padded())
+            .ignore_then(ident().padded_by(pad()))
             .then(type_descriptor())
             .then(assignment())
             .then_ignore(justp(";"))
@@ -58,7 +59,7 @@ pub fn statements<'a>() -> impl Parser<'a, &'a str, Vec<Statements>, ParseError<
         ))
         .repeated()
         .collect::<Vec<_>>()
-        .padded()
+        .padded_by(pad())
         .boxed()
     })
 }

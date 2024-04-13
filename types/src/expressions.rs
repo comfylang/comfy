@@ -1,4 +1,4 @@
-use chumsky::{error::Simple, span::SimpleSpan};
+use chumsky::{span::SimpleSpan};
 
 use crate::{Literal, Type};
 

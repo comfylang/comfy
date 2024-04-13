@@ -2,7 +2,7 @@ use chumsky::prelude::*;
 use comfy_types::Type;
 
 use super::{
-    common::{ident, justp},
+    common::{ident, justp, pad},
     ParseError,
 };
 
@@ -53,7 +53,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .separated_by(justp(","))
             .allow_trailing()
             .collect()
-            .padded()
+            .padded_by(pad())
             .delimited_by(justp("("), justp(")"))
             .map_with(|s, e| Type::Tuple(s, e.span()));
 
@@ -61,13 +61,13 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .clone()
             .then_ignore(justp(";"))
             .then(text::int(10).to_slice())
-            .padded()
+            .padded_by(pad())
             .delimited_by(justp("["), justp("]"))
             .map_with(|(ty, size), e| Type::Array(Box::new(ty), size.parse().unwrap(), e.span()));
 
         let slice = t
             .clone()
-            .padded()
+            .padded_by(pad())
             .delimited_by(justp("["), justp("]"))
             .map_with(|ty, e| Type::Slice(Box::new(ty), e.span()));
 
@@ -76,7 +76,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .map_with(|ty, e| Type::Pointer(Box::new(ty), e.span()));
 
         let mutable = justp("&mut")
-            .padded()
+            .padded_by(pad())
             .ignore_then(t.clone())
             .map_with(|ty, e| Type::MutableRef(Box::new(ty), e.span()));
 
@@ -86,10 +86,10 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
 
         let generic = ident()
             .then(
-                t.separated_by(justp(",").padded())
+                t.separated_by(justp(",").padded_by(pad()))
                     .allow_trailing()
                     .collect()
-                    .padded()
+                    .padded_by(pad())
                     .delimited_by(justp("<"), justp(">")),
             )
             .map_with(|(name, types), e| Type::Generic(name, types, e.span()));
@@ -97,5 +97,5 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
         choice((tuple, array, slice, pointer, mutable, reference, generic)).boxed()
     });
 
-    choice((complex_types, simple_types)).padded()
+    choice((complex_types, simple_types)).padded_by(pad())
 }

@@ -1,7 +1,7 @@
 use chumsky::prelude::*;
 use comfy_types::Literal;
 
-use super::ParseError;
+use super::{common::pad, ParseError};
 
 pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
     let numeric = {
@@ -84,5 +84,5 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
         choice((char_literal, string_literal))
     };
 
-    choice((textual, boolean, numeric)).padded()
+    choice((textual, boolean, numeric)).padded_by(pad())
 }

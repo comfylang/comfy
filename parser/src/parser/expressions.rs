@@ -3,18 +3,22 @@ use chumsky::prelude::*;
 use comfy_types::Expr;
 
 use super::common::justp;
+use super::common::pad;
 use super::types::types;
 use super::{common::ident, literals::literals, ParseError};
 
 pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
     let id = ident()
         .map_with(|s, e| Expr::Ident(s, e.span()))
-        .padded()
+        .padded_by(pad())
         .boxed();
-    let lit = literals().map(|l| Expr::Literal(l)).padded().boxed();
-    let ty = types().map(|t| Expr::Type(t)).padded().boxed();
+    let lit = literals()
+        .map(|l| Expr::Literal(l))
+        .padded_by(pad())
+        .boxed();
+    let ty = types().map(|t| Expr::Type(t)).padded_by(pad()).boxed();
 
-    let op = |c: &'a str| just(c).padded();
+    let op = |c: &'a str| just(c).padded_by(pad()).boxed();
     let justp = |c: &'a str| justp(c).boxed();
 
     let complex_expr = recursive(|expr| {
@@ -39,7 +43,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             .separated_by(justp(","))
             .allow_trailing()
             .collect()
-            .padded()
+            .padded_by(pad())
             .delimited_by(justp("["), justp("]"))
             .map_with(|s, e| Expr::Array(s, e.span()));
 
@@ -48,7 +52,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             .separated_by(justp(","))
             .allow_trailing()
             .collect()
-            .padded()
+            .padded_by(pad())
             .delimited_by(justp("("), justp(")"))
             .map_with(|s, e| Expr::Tuple(s, e.span()));
 
@@ -60,7 +64,8 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             .or(arr_expr)
             .or(tuple_expr)
             .or(id)
-            .padded();
+            .padded_by(pad())
+            .boxed();
 
         atom.pratt((
             //
@@ -130,7 +135,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
         ))
     });
 
-    complex_expr.padded()
+    complex_expr.padded_by(pad())
 }
 
 fn b<T>(a: T) -> Box<T> {

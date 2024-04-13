@@ -7,7 +7,7 @@ use crate::compiler::Error;
 use super::{ComfyType, CompileResult, State};
 
 fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
-    let expr_ty = expr.resolve_type(st).unwrap_or_else(|s| {
+    let expr_ty = expr.resolve_type(st).unwrap_or_else(|_s| {
         st.errors.push(Error::Compile(
             "Cannot infer type of expression".to_owned(),
             expr.span(),
@@ -56,7 +56,7 @@ impl ComfyType<String> for Statements {
             Statements::LetStatement(name, ty, expr, _) => {
                 format!("{};", typed_name(st, name, ty, expr)?)
             }
-            Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, s) => {
+            Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, _s) => {
                 let cty = ty.to_cpp(st)?;
 
                 if cty.1 .0 {
@@ -109,7 +109,7 @@ impl ComfyType<String> for Vec<Statements> {
         SimpleSpan::new(start, end)
     }
 
-    fn resolve_type(&self, state: &mut State) -> CompileResult<Type> {
+    fn resolve_type(&self, _state: &mut State) -> CompileResult<Type> {
         todo!()
     }
 }
