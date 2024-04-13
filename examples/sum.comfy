@@ -1,13 +1,13 @@
-fn sum(a: i8 = 2, b: i8 = 2) -> i8 {
+fn sum(a = 256, b = 2) -> i8 {
   a + b
 }
 
 fn main() -> int {
-  let a: i8 = 1; 
-  let b: i8 = 2; 
+  let a = 1; 
+  let b = 2; 
 
   printf("%d", sum(a, b));
-  printf("\n%d", sum());
+  printf("\n%d\n", sum());
 
   0
 }

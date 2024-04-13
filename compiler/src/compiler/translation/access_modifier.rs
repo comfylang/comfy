@@ -4,7 +4,7 @@ use comfy_types::AccessModifier;
 use super::{ComfyType, CompileResult, State};
 
 impl ComfyType<String> for AccessModifier {
-    fn to_c(&self, _: &mut State) -> CompileResult<String> {
+    fn to_cpp(&self, _: &mut State) -> CompileResult<String> {
         Ok(match self {
             AccessModifier::Public(_) => "public".to_owned(),
             AccessModifier::Private(_) => "private".to_owned(),
@@ -18,5 +18,9 @@ impl ComfyType<String> for AccessModifier {
             AccessModifier::Private(s) => *s,
             AccessModifier::Protected(s) => *s,
         }
+    }
+
+    fn resolve_type(&self, _: &mut State) -> CompileResult<comfy_types::Type> {
+        Ok(comfy_types::Type::Unknown(self.span()))
     }
 }

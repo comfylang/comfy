@@ -1,18 +1,18 @@
 use chumsky::span::SimpleSpan;
-use comfy_types::Expr;
+use comfy_types::{Expr, Type};
 
 use super::{ComfyType, CompileResult, Error, State};
 
 impl ComfyType<String> for Expr {
-    fn to_c(&self, st: &mut State) -> CompileResult<String> {
+    fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
-            Expr::Literal(l) => l.to_c(st)?,
+            Expr::Literal(l) => l.to_cpp(st)?,
             Expr::Type(t) => {
-                let ct = t.to_c(st)?;
+                let ct = t.to_cpp(st)?;
                 let span = self.span();
 
                 if ct.1 .0 {
-                    return Err(Error::Compile(
+                    st.errors.push(Error::Compile(
                         "Cannot cast to array-like type".to_owned(),
                         span,
                     ));
@@ -21,11 +21,11 @@ impl ComfyType<String> for Expr {
                 ct.0
             }
             Expr::Ident(i, _) => i.into(),
-            Expr::Add(l, r) => format!("({} + {})", l.to_c(st)?, r.to_c(st)?),
-            Expr::Sub(l, r) => format!("({} - {})", l.to_c(st)?, r.to_c(st)?),
-            Expr::Mul(l, r) => format!("({} * {})", l.to_c(st)?, r.to_c(st)?),
-            Expr::Div(l, r) => format!("({} / {})", l.to_c(st)?, r.to_c(st)?),
-            Expr::Mod(l, r) => format!("({} % {})", l.to_c(st)?, r.to_c(st)?),
+            Expr::Add(l, r) => format!("({} + {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Sub(l, r) => format!("({} - {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Mul(l, r) => format!("({} * {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Div(l, r) => format!("({} / {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Mod(l, r) => format!("({} % {})", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Neg(_) => todo!(),
             Expr::Pos(_) => todo!(),
             Expr::IncR(_) => todo!(),
@@ -51,7 +51,7 @@ impl ComfyType<String> for Expr {
             Expr::Shl(l, r) => todo!(),
             Expr::Shr(l, r) => todo!(),
             Expr::Member(l, r) => todo!(),
-            Expr::Cast(l, r) => format!("(({}) {} )", r.to_c(st)?, l.to_c(st)?),
+            Expr::Cast(l, r) => format!("(({}) {} )", r.to_cpp(st)?, l.to_cpp(st)?),
             Expr::Size(_) => todo!(),
             Expr::Align(_) => todo!(),
             Expr::Assign(l, r) => todo!(),
@@ -65,7 +65,7 @@ impl ComfyType<String> for Expr {
             Expr::BitAndAssign(l, r) => todo!(),
             Expr::BitXorAssign(l, r) => todo!(),
             Expr::BitOrAssign(l, r) => todo!(),
-            Expr::Call(l, r, _) => format!("{}({})", l.to_c(st)?, r.to_owned().to_c(st)?),
+            Expr::Call(l, r, _) => format!("{}({})", l.to_cpp(st)?, r.to_owned().to_cpp(st)?),
             Expr::ArrMember(_, _) => todo!(),
             Expr::Tuple(_, _) => todo!(),
             Expr::Array(_, _) => todo!(),
@@ -129,13 +129,70 @@ impl ComfyType<String> for Expr {
             Expr::Unknown => SimpleSpan::new(0, 0),
         }
     }
+
+    fn resolve_type(&self, state: &mut State) -> CompileResult<Type> {
+        match self {
+            Expr::Literal(l) => l.resolve_type(state),
+            Expr::Type(t) => t.resolve_type(state),
+            Expr::Ident(_, _) => todo!(),
+            Expr::Add(_, _) => todo!(),
+            Expr::Sub(_, _) => todo!(),
+            Expr::Mul(_, _) => todo!(),
+            Expr::Div(_, _) => todo!(),
+            Expr::Mod(_, _) => todo!(),
+            Expr::Neg(_) => todo!(),
+            Expr::Pos(_) => todo!(),
+            Expr::IncR(_) => todo!(),
+            Expr::IncL(_) => todo!(),
+            Expr::DecR(_) => todo!(),
+            Expr::DecL(_) => todo!(),
+            Expr::Factorial(_) => todo!(),
+            Expr::Deref(_) => todo!(),
+            Expr::Address(_) => todo!(),
+            Expr::Eq(_, _) => todo!(),
+            Expr::Ne(_, _) => todo!(),
+            Expr::Lt(_, _) => todo!(),
+            Expr::Le(_, _) => todo!(),
+            Expr::Gt(_, _) => todo!(),
+            Expr::Ge(_, _) => todo!(),
+            Expr::And(_, _) => todo!(),
+            Expr::Or(_, _) => todo!(),
+            Expr::Not(_) => todo!(),
+            Expr::BitAnd(_, _) => todo!(),
+            Expr::BitOr(_, _) => todo!(),
+            Expr::BitXor(_, _) => todo!(),
+            Expr::BitNot(_) => todo!(),
+            Expr::Shl(_, _) => todo!(),
+            Expr::Shr(_, _) => todo!(),
+            Expr::Member(_, _) => todo!(),
+            Expr::Cast(_, _) => todo!(),
+            Expr::Size(_) => todo!(),
+            Expr::Align(_) => todo!(),
+            Expr::Assign(_, _) => todo!(),
+            Expr::AddAssign(_, _) => todo!(),
+            Expr::SubAssign(_, _) => todo!(),
+            Expr::MulAssign(_, _) => todo!(),
+            Expr::DivAssign(_, _) => todo!(),
+            Expr::ModAssign(_, _) => todo!(),
+            Expr::ShlAssign(_, _) => todo!(),
+            Expr::ShrAssign(_, _) => todo!(),
+            Expr::BitAndAssign(_, _) => todo!(),
+            Expr::BitXorAssign(_, _) => todo!(),
+            Expr::BitOrAssign(_, _) => todo!(),
+            Expr::Call(_, _, _) => todo!(),
+            Expr::ArrMember(_, _) => todo!(),
+            Expr::Tuple(_, _) => todo!(),
+            Expr::Array(_, _) => todo!(),
+            Expr::Unknown => todo!(),
+        }
+    }
 }
 
 impl ComfyType<String> for Vec<Expr> {
-    fn to_c(&self, st: &mut State) -> CompileResult<String> {
+    fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
-            .map(|s| s.to_c(st))
+            .map(|s| s.to_cpp(st))
             .collect::<Result<Vec<_>, _>>()?
             .join(","))
     }
@@ -145,5 +202,9 @@ impl ComfyType<String> for Vec<Expr> {
         let end = self.last().unwrap().span().end;
 
         SimpleSpan::new(start, end)
+    }
+
+    fn resolve_type(&self, _: &mut State) -> CompileResult<comfy_types::Type> {
+        Ok(comfy_types::Type::Unknown(self.span()))
     }
 }

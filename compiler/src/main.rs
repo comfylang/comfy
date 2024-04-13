@@ -39,21 +39,19 @@ fn main() {
                 Ok(compiled) => {
                     println!("{}", compiled);
                 }
-                Err(e) => match e {
-                    Error::Compile(msg, s) => {
-                        Report::build(ReportKind::Error, src_file, s.start)
-                            .with_message(msg.to_string())
-                            .with_label(
-                                Label::new((src_file, s.into_range()))
-                                    .with_message(msg.to_string())
-                                    .with_color(Color::Red),
-                            )
-                            .finish()
-                            .print((src_file, Source::from(&src)))
-                            .unwrap();
-                    }
-                    Error::Clang(e) => eprintln!("{}", e.red().bold()),
-                },
+                Err(e) => e.into_iter().for_each(|e| match e {
+                    Error::Compile(msg, s) => Report::build(ReportKind::Error, src_file, s.start)
+                        .with_message(msg.clone())
+                        .with_label(
+                            Label::new((src_file, s.into_range()))
+                                .with_message(msg.to_string())
+                                .with_color(Color::Red),
+                        )
+                        .finish()
+                        .print((src_file, Source::from(&src)))
+                        .unwrap(),
+                    Error::Clang(msg) => eprintln!("{}", msg.red().bold()),
+                }),
             }
         }
         Err(parse_errs) => parse_errs.into_iter().for_each(|e| {

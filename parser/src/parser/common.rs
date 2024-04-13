@@ -1,4 +1,4 @@
-use chumsky::{combinator::Ignored, prelude::*};
+use chumsky::prelude::*;
 use comfy_types::{AccessModifier, Argument, Expr, Type};
 
 use super::{expressions, types, ParseError};
@@ -20,7 +20,7 @@ pub fn type_descriptor<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
     justp(":")
         .ignore_then(types().padded())
         .or_not()
-        .map(|t| t.unwrap_or(Type::Unknown))
+        .map_with(|t, e| t.unwrap_or(Type::Unknown(e.span())))
         .boxed()
 }
 
@@ -28,7 +28,7 @@ pub fn fn_type_descriptor<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>
     justp("->")
         .ignore_then(types().padded())
         .or_not()
-        .map(|t| t.unwrap_or(Type::Unknown))
+        .map_with(|t, e| t.unwrap_or(Type::Unknown(e.span())))
         .boxed()
 }
 

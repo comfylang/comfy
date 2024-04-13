@@ -33,7 +33,7 @@ pub enum Type {
     // Unknown
     Void(SimpleSpan),
     Never(SimpleSpan),
-    Unknown, // For parse only
+    Unknown(SimpleSpan), // For parse only
 
     // Sequence
     Tuple(Vec<Type>, SimpleSpan),

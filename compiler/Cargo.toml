@@ -20,5 +20,4 @@ comfy-utils = { path = "../utils", version = "0.1.0" }
 chumsky = { version = "=1.0.0-alpha.7", features = ["pratt"] }
 ariadne = "0.4.0"
 clap = { version = "4.5.4", features = ["derive"] }
-clang = "2.0.0"
 colored = "2.1.0"
