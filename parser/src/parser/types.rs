@@ -6,31 +6,44 @@ use super::{
     ParseError,
 };
 
+#[macro_export]
+macro_rules! to {
+    ($t: path) => {
+        |_, e| $t(e.span())
+    };
+}
+
 pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
-    let bool = just("bool").to(Type::Bool);
+    let bool = just("bool").map_with(to!(Type::Bool));
 
     let numeric = choice((
-        just("i8").to(Type::I8),
-        just("i16").to(Type::I16),
-        just("i32").to(Type::I32),
-        just("i64").to(Type::I64),
-        just("u8").to(Type::U8),
-        just("u16").to(Type::U16),
-        just("u32").to(Type::U32),
-        just("u64").to(Type::U64),
-        just("f32").to(Type::F32),
-        just("f64").to(Type::F64),
-        just("f128").to(Type::F128),
-        just("int").to(Type::Int),
-        just("uint").to(Type::Uint),
+        just("i8").map_with(to!(Type::I8)),
+        just("i16").map_with(to!(Type::I16)),
+        just("i32").map_with(to!(Type::I32)),
+        just("i64").map_with(to!(Type::I64)),
+        just("u8").map_with(to!(Type::U8)),
+        just("u16").map_with(to!(Type::U16)),
+        just("u32").map_with(to!(Type::U32)),
+        just("u64").map_with(to!(Type::U64)),
+        just("f32").map_with(to!(Type::F32)),
+        just("f64").map_with(to!(Type::F64)),
+        just("f128").map_with(to!(Type::F128)),
+        just("int").map_with(to!(Type::Int)),
+        just("uint").map_with(to!(Type::Uint)),
     ));
 
-    let textual = choice((just("char").to(Type::Char), just("str").to(Type::Str)));
+    let textual = choice((
+        just("char").map_with(to!(Type::Char)),
+        just("str").map_with(to!(Type::Str)),
+    ));
 
-    let unknown = choice((just("void").to(Type::Void), just("never").to(Type::Never)));
+    let unknown = choice((
+        just("void").map_with(to!(Type::Void)),
+        just("never").map_with(to!(Type::Never)),
+    ));
 
     let simple_types = choice((bool, numeric, textual, unknown)).boxed();
-    let custom = ident().map(|s| Type::Custom(s)).boxed();
+    let custom = ident().map_with(|s, e| Type::Custom(s, e.span())).boxed();
 
     let complex_types = recursive(|complex| {
         let t = simple_types.clone().or(complex).or(custom);
@@ -42,7 +55,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .collect()
             .padded()
             .delimited_by(justp("("), justp(")"))
-            .map(|s| Type::Tuple(s));
+            .map_with(|s, e| Type::Tuple(s, e.span()));
 
         let array = t
             .clone()
@@ -50,26 +63,26 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .then(text::int(10).to_slice())
             .padded()
             .delimited_by(justp("["), justp("]"))
-            .map(|(ty, size)| Type::Array(Box::new(ty), size.parse().unwrap()));
+            .map_with(|(ty, size), e| Type::Array(Box::new(ty), size.parse().unwrap(), e.span()));
 
         let slice = t
             .clone()
             .padded()
             .delimited_by(justp("["), justp("]"))
-            .map(|ty| Type::Slice(Box::new(ty)));
+            .map_with(|ty, e| Type::Slice(Box::new(ty), e.span()));
 
         let pointer = justp("*")
             .ignore_then(t.clone())
-            .map(|ty| Type::Pointer(Box::new(ty)));
+            .map_with(|ty, e| Type::Pointer(Box::new(ty), e.span()));
 
         let mutable = justp("&mut")
             .padded()
             .ignore_then(t.clone())
-            .map(|ty| Type::MutableRef(Box::new(ty)));
+            .map_with(|ty, e| Type::MutableRef(Box::new(ty), e.span()));
 
         let reference = justp("&")
             .ignore_then(t.clone())
-            .map(|ty| Type::Reference(Box::new(ty)));
+            .map_with(|ty, e| Type::Reference(Box::new(ty), e.span()));
 
         let generic = ident()
             .then(
@@ -79,7 +92,7 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
                     .padded()
                     .delimited_by(justp("<"), justp(">")),
             )
-            .map(|(name, types)| Type::Generic(name, types));
+            .map_with(|(name, types), e| Type::Generic(name, types, e.span()));
 
         choice((tuple, array, slice, pointer, mutable, reference, generic)).boxed()
     });

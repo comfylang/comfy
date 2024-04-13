@@ -15,14 +15,14 @@ pub fn statements<'a>() -> impl Parser<'a, &'a str, Vec<Statements>, ParseError<
     recursive(|stmts| {
         let expr_statement = expressions()
             .then_ignore(justp(";"))
-            .map(Statements::ExpressionStatement);
+            .map_with(|expr, e| Statements::ExpressionStatement(expr, e.span()));
 
         let let_statement = justp("let")
             .ignore_then(ident().padded())
             .then(type_descriptor())
             .then(assignment())
             .then_ignore(justp(";"))
-            .map(|((name, ty), expr)| Statements::LetStatement(name, ty, expr));
+            .map_with(|((name, ty), expr), e| Statements::LetStatement(name, ty, expr, e.span()));
 
         let function_declaration = access_modifier()
             .or_not()
@@ -31,13 +31,14 @@ pub fn statements<'a>() -> impl Parser<'a, &'a str, Vec<Statements>, ParseError<
             .then(decl_args().delimited_by(justp("("), justp(")")))
             .then(fn_type_descriptor())
             .then(stmts.clone().delimited_by(justp("{"), justp("}")))
-            .map(|((((access_modifier, name), args), ty), body)| {
+            .map_with(|((((access_modifier, name), args), ty), body), e| {
                 Statements::FunctionDeclaration(
-                    access_modifier.unwrap_or(AccessModifier::Private),
+                    access_modifier.unwrap_or(AccessModifier::Private(e.span())),
                     name,
                     args,
                     ty,
                     body,
+                    e.span(),
                 )
             });
 
@@ -47,7 +48,7 @@ pub fn statements<'a>() -> impl Parser<'a, &'a str, Vec<Statements>, ParseError<
                 .then_ignore(justp(";")),
             expressions(),
         ))
-        .map(Statements::ReturnStatement);
+        .map_with(|expr, e| Statements::ReturnStatement(expr, e.span()));
 
         choice((
             function_declaration,

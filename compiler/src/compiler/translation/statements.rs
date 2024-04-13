@@ -37,11 +37,11 @@ fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResu
 impl ToC<String> for Statements {
     fn to_c(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
-            Statements::ExpressionStatement(e) => format!("{};", e.to_c(st)?),
-            Statements::LetStatement(name, ty, expr) => {
+            Statements::ExpressionStatement(e, s) => format!("{};", e.to_c(st)?),
+            Statements::LetStatement(name, ty, expr, s) => {
                 format!("{};", typed_name(st, name, ty, expr)?)
             }
-            Statements::FunctionDeclaration(_access_modifier, name, args, ty, body) => {
+            Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, s) => {
                 let cty = ty.to_c(st)?;
 
                 if cty.1 .0 {
@@ -60,7 +60,7 @@ impl ToC<String> for Statements {
                     inc_indent(cbody)
                 )
             }
-            Statements::ReturnStatement(e) => format!("return {};", e.to_c(st)?),
+            Statements::ReturnStatement(e, s) => format!("return {};", e.to_c(st)?),
         })
     }
 }

@@ -1,3 +1,5 @@
+use chumsky::{error::Simple, span::SimpleSpan};
+
 use crate::{Literal, Type};
 
 #[derive(Debug, Clone)]
@@ -73,13 +75,13 @@ pub enum Expr {
     BitOrAssign(Box<Self>, Box<Self>),
 
     // Call
-    Call(Box<Self>, Vec<Self>),
+    Call(Box<Self>, Vec<Self>, SimpleSpan),
 
-    ArrMember(Box<Self>),
+    ArrMember(Box<Self>, SimpleSpan),
 
     // Sequence
-    Tuple(Vec<Self>),
-    Array(Vec<Self>),
+    Tuple(Vec<Self>, SimpleSpan),
+    Array(Vec<Self>, SimpleSpan),
 
     Unknown, // For variable initialization
 }

@@ -16,29 +16,29 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
             .then(frac.then(text::digits(10)).or_not())
             .then(exp.then(text::digits(10)).or_not())
             .to_slice()
-            .map(|s: &str| Literal::Decimal(s.to_owned()));
+            .map_with(|s: &str, e| Literal::Decimal(s.to_owned(), e.span()));
 
         let binary = just("0b")
             .or(just("0b"))
             .ignore_then(text::digits(2).to_slice())
-            .map(|s: &str| Literal::Binary(s.to_owned()));
+            .map_with(|s: &str, e| Literal::Binary(s.to_owned(), e.span()));
 
         let octal = just("0o")
             .or(just("0O"))
             .ignore_then(text::digits(8).to_slice())
-            .map(|s: &str| Literal::Octal(s.to_owned()));
+            .map_with(|s: &str, e| Literal::Octal(s.to_owned(), e.span()));
 
         let hex = just("0x")
             .or(just("0X"))
             .ignore_then(text::digits(16).to_slice())
-            .map(|s: &str| Literal::Hex(s.to_owned()));
+            .map_with(|s: &str, e| Literal::Hex(s.to_owned(), e.span()));
 
         choice((binary, octal, hex, decimal))
     };
 
     let boolean = choice((
-        just("true").to(Literal::True),
-        just("false").to(Literal::False),
+        just("true").map_with(|_, e| Literal::True(e.span())),
+        just("false").map_with(|_, e| Literal::False(e.span())),
     ));
 
     let textual = {
@@ -69,7 +69,7 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
             .clone()
             .or(any().to_slice().map(ToString::to_string))
             .delimited_by(just('\''), just('\''))
-            .map(|s: String| Literal::Char(s));
+            .map_with(|s: String, e| Literal::Char(s, e.span()));
 
         let string_literal = none_of("\\\"")
             .to_slice()
@@ -79,7 +79,7 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
             .to_slice()
             .map(ToString::to_string)
             .delimited_by(just('"'), just('"'))
-            .map(|s: String| Literal::Str(s));
+            .map_with(|s: String, e| Literal::Str(s, e.span()));
 
         choice((char_literal, string_literal))
     };

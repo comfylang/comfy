@@ -24,12 +24,12 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
                     .collect::<Vec<_>>()
                     .delimited_by(justp("("), justp(")")),
             )
-            .map(|(f, args)| Expr::Call(b(f), args));
+            .map_with(|(f, args), e| Expr::Call(b(f), args, e.span()));
 
         let arr_member = justp("[")
-            .then(expr.clone())
-            .then(justp("]"))
-            .map(|r| Expr::ArrMember(b(r.0 .1)));
+            .ignore_then(expr.clone())
+            .then_ignore(justp("]"))
+            .map_with(|r, e| Expr::ArrMember(b(r), e.span()));
 
         let arr_expr = expr
             .clone()
@@ -38,7 +38,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             .collect()
             .padded()
             .delimited_by(justp("["), justp("]"))
-            .map(|s| Expr::Array(s));
+            .map_with(|s, e| Expr::Array(s, e.span()));
 
         let tuple_expr = expr
             .clone()
@@ -47,7 +47,7 @@ pub fn expressions<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
             .collect()
             .padded()
             .delimited_by(justp("("), justp(")"))
-            .map(|s| Expr::Tuple(s));
+            .map_with(|s, e| Expr::Tuple(s, e.span()));
 
         let atom = lit
             .or(expr.delimited_by(justp("("), justp(")")))

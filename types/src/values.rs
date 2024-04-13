@@ -1,71 +1,73 @@
+use chumsky::span::SimpleSpan;
+
 #[derive(Debug, Clone)]
 pub enum Type {
-    Bool,
+    Bool(SimpleSpan),
 
     // Numeric
     // Signed
-    I8,
-    I16,
-    I32,
-    I64,
+    I8(SimpleSpan),
+    I16(SimpleSpan),
+    I32(SimpleSpan),
+    I64(SimpleSpan),
 
     // Unsigned
-    U8,
-    U16,
-    U32,
-    U64,
+    U8(SimpleSpan),
+    U16(SimpleSpan),
+    U32(SimpleSpan),
+    U64(SimpleSpan),
 
     // Std
-    Int,
-    Uint,
+    Int(SimpleSpan),
+    Uint(SimpleSpan),
 
     // Float
-    F32,
-    F64,
-    F128,
+    F32(SimpleSpan),
+    F64(SimpleSpan),
+    F128(SimpleSpan),
 
     // Textual
-    Char,
-    Str,
+    Char(SimpleSpan),
+    Str(SimpleSpan),
 
     // Unknown
-    Void,
-    Never,
+    Void(SimpleSpan),
+    Never(SimpleSpan),
     Unknown, // For parse only
 
     // Sequence
-    Tuple(Vec<Type>),
-    Array(Box<Type>, u64),
-    Slice(Box<Type>),
+    Tuple(Vec<Type>, SimpleSpan),
+    Array(Box<Type>, u64, SimpleSpan),
+    Slice(Box<Type>, SimpleSpan),
 
     // User-defined
-    Custom(String),
+    Custom(String, SimpleSpan),
     // Struct(String),
     // Enum(String),
     // Union(String),
 
     // Pointers
-    Pointer(Box<Type>),
-    MutableRef(Box<Type>),
-    Reference(Box<Type>),
+    Pointer(Box<Type>, SimpleSpan),
+    MutableRef(Box<Type>, SimpleSpan),
+    Reference(Box<Type>, SimpleSpan),
 
     // Generic
-    Generic(String, Vec<Type>),
+    Generic(String, Vec<Type>, SimpleSpan),
 }
 
 #[derive(Debug, Clone)]
 pub enum Literal {
     // Boolean
-    True,
-    False,
+    True(SimpleSpan),
+    False(SimpleSpan),
 
     // Numeric
-    Decimal(String),
-    Hex(String),
-    Octal(String),
-    Binary(String),
+    Decimal(String, SimpleSpan),
+    Hex(String, SimpleSpan),
+    Octal(String, SimpleSpan),
+    Binary(String, SimpleSpan),
 
     // Textual
-    Char(String),
-    Str(String),
+    Char(String, SimpleSpan),
+    Str(String, SimpleSpan),
 }

@@ -60,10 +60,10 @@ impl ToC<String> for Expr {
             Expr::BitAndAssign(l, r) => todo!(),
             Expr::BitXorAssign(l, r) => todo!(),
             Expr::BitOrAssign(l, r) => todo!(),
-            Expr::Call(l, r) => format!("{}({})", l.to_c(st)?, r.to_owned().to_c(st)?),
-            Expr::ArrMember(_) => todo!(),
-            Expr::Tuple(_) => todo!(),
-            Expr::Array(_) => todo!(),
+            Expr::Call(l, r, s) => format!("{}({})", l.to_c(st)?, r.to_owned().to_c(st)?),
+            Expr::ArrMember(_, _) => todo!(),
+            Expr::Tuple(_, _) => todo!(),
+            Expr::Array(_, _) => todo!(),
             Expr::Unknown => todo!(),
         })
     }

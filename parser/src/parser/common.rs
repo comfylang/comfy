@@ -9,9 +9,9 @@ pub fn ident<'a>() -> impl Parser<'a, &'a str, String, ParseError<'a>> {
 
 pub fn access_modifier<'a>() -> impl Parser<'a, &'a str, AccessModifier, ParseError<'a>> {
     choice((
-        just("pub").to(AccessModifier::Public),
-        just("priv").to(AccessModifier::Private),
-        just("prot").to(AccessModifier::Protected),
+        just("pub").map_with(|_, s| AccessModifier::Public(s.span())),
+        just("priv").map_with(|_, s| AccessModifier::Private(s.span())),
+        just("prot").map_with(|_, s| AccessModifier::Protected(s.span())),
     ))
     .padded()
 }
@@ -45,7 +45,9 @@ pub fn decl_args<'a>() -> impl Parser<'a, &'a str, Vec<Argument>, ParseError<'a>
         .then(type_descriptor())
         .then(assignment().or_not())
         .padded()
-        .map(|((name, ty), e)| Argument(name, ty, e.unwrap_or(Expr::Unknown)));
+        .map_with(|((name, ty), exp), e| {
+            Argument(name, ty, exp.unwrap_or(Expr::Unknown), e.span())
+        });
 
     arg.separated_by(justp(","))
         .allow_trailing()

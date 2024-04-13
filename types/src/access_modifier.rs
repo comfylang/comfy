@@ -1,6 +1,8 @@
+use chumsky::span::SimpleSpan;
+
 #[derive(Debug, Clone)]
 pub enum AccessModifier {
-    Public,
-    Private,
-    Protected,
+    Public(SimpleSpan),
+    Private(SimpleSpan),
+    Protected(SimpleSpan),
 }
