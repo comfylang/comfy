@@ -1,15 +1,12 @@
 use chumsky::prelude::*;
 use comfy_types::{
     tokens::{self, Kind, TokenInput},
-    Literal, Type,
+    Type,
 };
 
-use super::TokenParseError;
+use super::ParseError;
 
-use super::{
-    common::{ident, justp, pad},
-    ParseError,
-};
+use super::common::ident;
 
 #[macro_export]
 macro_rules! to {
@@ -25,7 +22,7 @@ macro_rules! id {
     };
 }
 
-pub fn types<'a>() -> impl Parser<'a, TokenInput<'a>, Type, TokenParseError<'a>> {
+pub fn types<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseError<'a>> {
     let bool = just(id!("bool")).map_with(to!(Type::Bool));
 
     let numeric = choice((

@@ -4,7 +4,7 @@ use comfy_types::tokens::TokenInput;
 use comfy_types::AccessModifier;
 use comfy_types::Statements;
 
-use super::TokenParseError;
+use super::ParseError;
 
 use super::common::access_modifier;
 use super::common::assignment;
@@ -14,7 +14,7 @@ use super::common::fn_type_descriptor;
 use super::common::type_descriptor;
 use super::{expressions, ident};
 
-pub fn statements<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Statements>, TokenParseError<'a>> {
+pub fn statements<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Statements>, ParseError<'a>> {
     recursive(|stmts| {
         let expr_statement = expressions()
             .then_ignore(just(Kind::Semicolon))

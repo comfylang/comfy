@@ -1,9 +1,9 @@
 use chumsky::prelude::*;
 use comfy_types::tokens::{Kind, Literal};
 
-use super::ParseError;
+use super::LexError;
 
-pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
+pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, LexError<'a>> {
     let numeric = {
         let frac = just('.').labelled("fraction");
         let pm = one_of("+-").labelled("sign");
@@ -97,11 +97,11 @@ pub fn literals<'a>() -> impl Parser<'a, &'a str, Literal, ParseError<'a>> {
     choice((textual, boolean, numeric)).labelled("literal")
 }
 
-pub fn ident<'a>() -> impl Parser<'a, &'a str, String, ParseError<'a>> {
+pub fn ident<'a>() -> impl Parser<'a, &'a str, String, LexError<'a>> {
     text::ident().map(ToString::to_string)
 }
 
-pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), ParseError<'a>> {
+pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), LexError<'a>> {
     let op1 = choice((
         just(";").to(Kind::Semicolon),
         just(",").to(Kind::Comma),
@@ -133,8 +133,8 @@ pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), ParseError<'a
         just("->").to(Kind::Arrow),
         just("<<").to(Kind::LeftShift),
         just(">>").to(Kind::RightShift),
-        just("++").to(Kind::PlusPlus),
-        just("--").to(Kind::MinusMinus),
+        just("++").to(Kind::DoublePlus),
+        just("--").to(Kind::DoubleMinus),
         just("+=").to(Kind::PlusAssign),
         just("-=").to(Kind::MinusAssign),
         just("*=").to(Kind::StarAssign),
@@ -143,8 +143,8 @@ pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), ParseError<'a
         just("%=").to(Kind::PercentAssign),
         just("&=").to(Kind::AmpersandAssign),
         just("|=").to(Kind::PipeAssign),
-        just("&&").to(Kind::AmpersandAmpersand),
-        just("||").to(Kind::PipePipe),
+        just("&&").to(Kind::DoubleAmp),
+        just("||").to(Kind::DoublePipe),
         just("==").to(Kind::DoubleEqual),
         just("!=").to(Kind::NotEqual),
         just("<=").to(Kind::LessEqual),
@@ -184,6 +184,6 @@ pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), ParseError<'a
         .recover_with(skip_then_retry_until(any().ignored(), end()))
 }
 
-pub fn tokens<'a>() -> impl Parser<'a, &'a str, Vec<(Kind, SimpleSpan)>, ParseError<'a>> {
+pub fn tokens<'a>() -> impl Parser<'a, &'a str, Vec<(Kind, SimpleSpan)>, LexError<'a>> {
     token().repeated().collect()
 }

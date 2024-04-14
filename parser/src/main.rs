@@ -15,5 +15,12 @@ fn main() {
     let src_file = &args.input_file;
     let src = fs::read_to_string(src_file).expect("Could not read file");
 
-    let _ = parse(src_file, src);
+    let res = parse(src_file, src);
+
+    match res {
+        Ok(ast) => {
+            println!("AST: {:#?}", ast);
+        }
+        Err(_) => {}
+    }
 }

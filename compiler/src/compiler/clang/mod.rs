@@ -3,6 +3,8 @@ use std::{
     process::{Command, Stdio},
 };
 
+use colored::Colorize;
+
 use super::{CompileResult, Error};
 
 struct ClangArgs {
@@ -45,13 +47,15 @@ fn run_clang(clang_args: ClangArgs) -> Result<(), Error> {
     let output = match output {
         Ok(output) => output,
         Err(e) => {
-            return Err(Error::Clang(format!("Failed to execute clang: '{e}'")));
+            return Err(Error::Clang(format!(
+                "Failed to execute clang++: '{e}'\n{}",
+                "Make sure clang++ is installed, clang++ required for compiling comfy".blue()
+            )));
         }
     };
 
     if !output.status.success() {
-        let error_message = String::from_utf8_lossy(&output.stderr);
-        Err(Error::Clang(format!("Compilation failed: {error_message}")))
+        Err(Error::Clang(format!("Compilation failed")))
     } else {
         Ok(())
     }

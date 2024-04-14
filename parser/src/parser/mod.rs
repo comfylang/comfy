@@ -13,5 +13,5 @@ pub use types::types;
 
 use chumsky::prelude::*;
 
-pub type ParseError<'a> = extra::Err<Rich<'a, char>>;
-pub type TokenParseError<'a> = extra::Err<Rich<'a, Kind, SimpleSpan>>;
+pub type LexError<'a> = extra::Err<Rich<'a, char>>;
+pub type ParseError<'a> = extra::Err<Rich<'a, Kind, SimpleSpan>>;

@@ -40,9 +40,9 @@ pub enum Kind {
     /// >>
     RightShift,
     /// ++
-    PlusPlus,
+    DoublePlus,
     /// --
-    MinusMinus,
+    DoubleMinus,
     /// ?
     QuestionMark,
     /// !
@@ -73,9 +73,9 @@ pub enum Kind {
 
     // logic operators
     /// &&
-    AmpersandAmpersand,
+    DoubleAmp,
     /// ||
-    PipePipe,
+    DoublePipe,
     /// ==          
     DoubleEqual,
     /// !=              
@@ -149,8 +149,8 @@ impl fmt::Display for Kind {
             Kind::Tilde => write!(f, "~"),
             Kind::LeftShift => write!(f, "<<"),
             Kind::RightShift => write!(f, ">>"),
-            Kind::PlusPlus => write!(f, "++"),
-            Kind::MinusMinus => write!(f, "--"),
+            Kind::DoublePlus => write!(f, "++"),
+            Kind::DoubleMinus => write!(f, "--"),
             Kind::QuestionMark => write!(f, "?"),
             Kind::ExclamationMark => write!(f, "!"),
             Kind::Assign => write!(f, "="),
@@ -164,8 +164,8 @@ impl fmt::Display for Kind {
             Kind::PipeAssign => write!(f, "|="),
             Kind::LeftShiftAssign => write!(f, "<<="),
             Kind::RightShiftAssign => write!(f, ">>="),
-            Kind::AmpersandAmpersand => write!(f, "&&"),
-            Kind::PipePipe => write!(f, "||"),
+            Kind::DoubleAmp => write!(f, "&&"),
+            Kind::DoublePipe => write!(f, "||"),
             Kind::DoubleEqual => write!(f, "=="),
             Kind::NotEqual => write!(f, "!="),
             Kind::Less => write!(f, "<"),

@@ -5,7 +5,7 @@ fn sum(a = 2, b = 2) -> i8 {
 }
 
 fn main() -> int {
-  let w a = 1; // First argument
+  let a = 1; // First argument
   let b = 2; // Second argument
   
   printf("%d", sum(a, b)); // Prints 3

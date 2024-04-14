@@ -4,22 +4,21 @@ use comfy_types::{
     AccessModifier, Argument, Expr, Type,
 };
 
-use super::{expressions, types, ParseError, TokenParseError};
+use super::{expressions, types, ParseError};
 
-pub fn ident<'a>() -> impl Parser<'a, TokenInput<'a>, String, TokenParseError<'a>> {
+pub fn ident<'a>() -> impl Parser<'a, TokenInput<'a>, String, ParseError<'a>> {
     select! {
         Kind::Ident(s) => s.to_owned()
     }
 }
 
-pub fn lit<'a>() -> impl Parser<'a, TokenInput<'a>, tokens::Literal, TokenParseError<'a>> {
+pub fn lit<'a>() -> impl Parser<'a, TokenInput<'a>, tokens::Literal, ParseError<'a>> {
     select! {
         Kind::Literal(s) => s
     }
 }
 
-pub fn access_modifier<'a>() -> impl Parser<'a, TokenInput<'a>, AccessModifier, TokenParseError<'a>>
-{
+pub fn access_modifier<'a>() -> impl Parser<'a, TokenInput<'a>, AccessModifier, ParseError<'a>> {
     choice((
         just(Kind::Pub).map_with(|_, s| AccessModifier::Public(s.span())),
         just(Kind::Priv).map_with(|_, s| AccessModifier::Private(s.span())),
@@ -28,7 +27,7 @@ pub fn access_modifier<'a>() -> impl Parser<'a, TokenInput<'a>, AccessModifier, 
     .labelled("access modifier")
 }
 
-pub fn type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, TokenParseError<'a>> {
+pub fn type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseError<'a>> {
     just(Kind::Colon)
         .ignore_then(types())
         .or_not()
@@ -37,7 +36,7 @@ pub fn type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, TokenParse
         .boxed()
 }
 
-pub fn fn_type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, TokenParseError<'a>> {
+pub fn fn_type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseError<'a>> {
     just(Kind::Arrow)
         .ignore_then(types())
         .or_not()
@@ -46,26 +45,13 @@ pub fn fn_type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, TokenPa
         .boxed()
 }
 
-pub fn assignment<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, TokenParseError<'a>> {
+pub fn assignment<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {
     just(Kind::Assign)
         .ignore_then(expressions())
         .labelled("assignment")
 }
 
-pub fn justp<'a>(p: &'a str) -> impl Parser<'a, &'a str, (), ParseError<'a>> {
-    just(p).padded_by(pad()).ignored()
-}
-
-pub fn pad<'a>() -> impl Parser<'a, &'a str, (), ParseError<'a>> {
-    just("//")
-        .then(any().and_is(just('\n').not()).repeated())
-        .padded()
-        .repeated()
-        .padded()
-        .ignored()
-}
-
-pub fn decl_args<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Argument>, TokenParseError<'a>> {
+pub fn decl_args<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Argument>, ParseError<'a>> {
     let arg = ident()
         .then(type_descriptor())
         .then(assignment().or_not())

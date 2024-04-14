@@ -1,17 +1,14 @@
 use chumsky::prelude::*;
 use comfy_types::{
-    tokens::{self, Kind, TokenInput},
+    tokens::{self, TokenInput},
     Literal,
 };
 
-use super::TokenParseError;
+use super::ParseError;
 
-use super::{
-    common::{lit, pad},
-    ParseError,
-};
+use super::common::lit;
 
-pub fn literals<'a>() -> impl Parser<'a, TokenInput<'a>, Literal, TokenParseError<'a>> {
+pub fn literals<'a>() -> impl Parser<'a, TokenInput<'a>, Literal, ParseError<'a>> {
     lit()
         .map_with(|s: tokens::Literal, e| match s {
             tokens::Literal::True => Literal::True(e.span()),

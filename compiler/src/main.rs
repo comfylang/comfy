@@ -4,9 +4,8 @@ use clap::Parser;
 
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
-use chumsky::Parser as ChumskyParser;
 use colored::*;
-use comfy_parser::{parse, statements};
+use comfy_parser::parse;
 use compiler::{Compiler, Error};
 
 mod compiler;
@@ -42,6 +41,7 @@ fn main() {
             }
             Err(e) => e.into_iter().for_each(|e| match e {
                 Error::Compile(msg, s) => Report::build(ReportKind::Error, src_file, s.start)
+                    .with_code("Compiler")
                     .with_message(msg.clone())
                     .with_label(
                         Label::new((src_file, s.into_range()))
@@ -51,7 +51,7 @@ fn main() {
                     .finish()
                     .print((src_file, Source::from(&src)))
                     .unwrap(),
-                Error::Clang(msg) => eprintln!("{}", msg.red().bold()),
+                Error::Clang(msg) => eprintln!("{} {}", "[Clang]".red().bold(), msg.bold()),
             }),
         }
     }

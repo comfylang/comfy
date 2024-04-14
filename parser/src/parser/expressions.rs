@@ -4,12 +4,12 @@ use comfy_types::tokens::Kind;
 use comfy_types::tokens::TokenInput;
 use comfy_types::Expr;
 
-use super::TokenParseError;
+use super::ParseError;
 
 use super::types::types;
 use super::{common::ident, literals::literals};
 
-pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, TokenParseError<'a>> {
+pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {
     let id = ident().map_with(|s, e| Expr::Ident(s, e.span())).boxed();
 
     let lit = literals().map(|l| Expr::Literal(l)).boxed();
@@ -69,14 +69,14 @@ pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, TokenParseErro
             //
             //
             infix(left(15), op(Kind::Dot), |l, r| Expr::Member(b(l), b(r))),
-            postfix(15, op(Kind::PlusPlus), |lhs| Expr::IncR(b(lhs))),
-            postfix(15, op(Kind::MinusMinus), |lhs| Expr::DecR(b(lhs))),
+            postfix(15, op(Kind::DoublePlus), |lhs| Expr::IncR(b(lhs))),
+            postfix(15, op(Kind::DoubleMinus), |lhs| Expr::DecR(b(lhs))),
             postfix(15, op(Kind::ExclamationMark), |lhs| Expr::Factorial(b(lhs))),
             //
             //
             infix(right(14), op(Kind::As), |l, r| Expr::Cast(b(l), b(r))),
-            prefix(14, op(Kind::PlusPlus), |rhs| Expr::IncL(b(rhs))),
-            prefix(14, op(Kind::MinusMinus), |rhs| Expr::DecL(b(rhs))),
+            prefix(14, op(Kind::DoublePlus), |rhs| Expr::IncL(b(rhs))),
+            prefix(14, op(Kind::DoubleMinus), |rhs| Expr::DecL(b(rhs))),
             prefix(14, op(Kind::Minus), |rhs| Expr::Neg(b(rhs))),
             prefix(14, op(Kind::Plus), |rhs| Expr::Pos(b(rhs))),
             prefix(14, op(Kind::ExclamationMark), |rhs| Expr::Not(b(rhs))),
@@ -119,11 +119,9 @@ pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, TokenParseErro
             //
             infix(left(6), op(Kind::Pipe), |l, r| Expr::BitOr(b(l), b(r))),
             //
-            infix(left(5), op(Kind::AmpersandAmpersand), |l, r| {
-                Expr::And(b(l), b(r))
-            }),
+            infix(left(5), op(Kind::DoubleAmp), |l, r| Expr::And(b(l), b(r))),
             //
-            infix(left(4), op(Kind::PipePipe), |l, r| Expr::Or(b(l), b(r))),
+            infix(left(4), op(Kind::DoublePipe), |l, r| Expr::Or(b(l), b(r))),
             //
             infix(right(3), op(Kind::Assign), |l, r| Expr::Assign(b(l), b(r))),
             infix(right(3), op(Kind::PlusAssign), |l, r| {
