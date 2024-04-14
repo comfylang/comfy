@@ -1,43 +1,48 @@
 use std::fs;
 
-use clap::Parser;
-
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
+use clap::Parser;
 use colored::*;
 use comfy_parser::parse;
+use comfy_utils::inc_indent;
 use compiler::{Compiler, Error};
 
+mod cli;
 mod compiler;
 
-#[derive(Parser, Debug)]
-#[clap(about, version, author)]
-struct Args {
-    #[clap(short, long)]
-    input_file: String,
-
-    #[clap(short, long)]
-    output_file: String,
-}
-
 fn main() {
-    let args = Args::parse();
+    let args = cli::Args::parse();
 
-    let src_file = &args.input_file;
+    let src_file = &args.input_file.clone();
     let src = fs::read_to_string(src_file).expect("Could not read file");
-
-    let output_file = &args.output_file;
 
     let ast = parse(src_file, src.clone());
 
     if let Ok(ast) = ast {
         let mut compiler = Compiler::new(ast);
 
-        let compiled = compiler.compile(output_file);
+        let compiled = compiler.compile(args.clone());
 
         match compiled {
             Ok(compiled) => {
-                println!("{}", compiled);
+                if args.verbose {
+                    println!(
+                        "{} \n\n{}",
+                        "Tranlated code:".bold().green(),
+                        inc_indent(compiled.code)
+                    );
+                    println!(
+                        "{} {}s",
+                        "Translation time:".bold().green(),
+                        compiled.translation_time.as_secs_f64()
+                    );
+                    println!(
+                        "{} {}s",
+                        "Compilation time:".bold().green(),
+                        compiled.compile_time.as_secs_f64()
+                    );
+                }
             }
             Err(e) => e.into_iter().for_each(|e| match e {
                 Error::Compile(msg, s) => Report::build(ReportKind::Error, src_file, s.start)
