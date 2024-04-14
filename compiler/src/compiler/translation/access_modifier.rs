@@ -1,5 +1,5 @@
 use chumsky::span::SimpleSpan;
-use comfy_types::AccessModifier;
+use comfy_types::{AccessModifier, Type};
 
 use super::{ComfyType, CompileResult, State};
 
@@ -20,7 +20,7 @@ impl ComfyType<String> for AccessModifier {
         }
     }
 
-    fn resolve_type(&self, _: &mut State) -> CompileResult<comfy_types::Type> {
-        Ok(comfy_types::Type::Unknown(self.span()))
+    fn resolve_type(&self, _: &mut State) -> CompileResult<Type> {
+        Ok(Type::Unknown(self.span()))
     }
 }

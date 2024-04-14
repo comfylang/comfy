@@ -1,4 +1,4 @@
-use chumsky::{span::SimpleSpan};
+use chumsky::span::SimpleSpan;
 
 use crate::{Literal, Type};
 
@@ -77,7 +77,7 @@ pub enum Expr {
     // Call
     Call(Box<Self>, Vec<Self>, SimpleSpan),
 
-    ArrMember(Box<Self>, SimpleSpan),
+    ArrMember(Box<Self>, Box<Self>),
 
     // Sequence
     Tuple(Vec<Self>, SimpleSpan),

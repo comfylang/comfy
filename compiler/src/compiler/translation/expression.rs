@@ -1,5 +1,6 @@
 use chumsky::span::SimpleSpan;
 use comfy_types::{Expr, Type};
+use comfy_utils::{b, inc_indent};
 
 use super::{ComfyType, CompileResult, Error, State};
 
@@ -26,50 +27,58 @@ impl ComfyType<String> for Expr {
             Expr::Mul(l, r) => format!("({} * {})", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Div(l, r) => format!("({} / {})", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Mod(l, r) => format!("({} % {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Neg(_) => todo!(),
-            Expr::Pos(_) => todo!(),
-            Expr::IncR(_) => todo!(),
-            Expr::IncL(_) => todo!(),
-            Expr::DecR(_) => todo!(),
-            Expr::DecL(_) => todo!(),
+            Expr::Neg(l) => format!("-({})", l.to_cpp(st)?),
+            Expr::Pos(l) => format!("({})", l.to_cpp(st)?),
+            Expr::IncR(l) => format!("({}++)", l.to_cpp(st)?),
+            Expr::IncL(r) => format!("(++{})", r.to_cpp(st)?),
+            Expr::DecR(l) => format!("({}--)", l.to_cpp(st)?),
+            Expr::DecL(r) => format!("(--{})", r.to_cpp(st)?),
             Expr::Factorial(_) => todo!(),
-            Expr::Deref(_) => todo!(),
-            Expr::Address(_) => todo!(),
-            Expr::Eq(_l, _r) => todo!(),
-            Expr::Ne(_l, _r) => todo!(),
-            Expr::Lt(_l, _r) => todo!(),
-            Expr::Le(_l, _r) => todo!(),
-            Expr::Gt(_l, _r) => todo!(),
-            Expr::Ge(_l, _r) => todo!(),
-            Expr::And(_l, _r) => todo!(),
-            Expr::Or(_l, _r) => todo!(),
-            Expr::Not(_) => todo!(),
-            Expr::BitAnd(_l, _r) => todo!(),
-            Expr::BitOr(_l, _r) => todo!(),
-            Expr::BitXor(_l, _r) => todo!(),
-            Expr::BitNot(_) => todo!(),
-            Expr::Shl(_l, _r) => todo!(),
-            Expr::Shr(_l, _r) => todo!(),
-            Expr::Member(_l, _r) => todo!(),
+            Expr::Deref(r) => format!("(*{})", r.to_cpp(st)?),
+            Expr::Address(r) => format!("(&{})", r.to_cpp(st)?),
+            Expr::Eq(l, r) => format!("({} == {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Ne(l, r) => format!("({} != {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Lt(l, r) => format!("({} < {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Le(l, r) => format!("({} <= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Gt(l, r) => format!("({} > {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Ge(l, r) => format!("({} >= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::And(l, r) => format!("({} && {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Or(l, r) => format!("({} || {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Not(r) => format!("(!{})", r.to_cpp(st)?),
+            Expr::BitAnd(l, r) => format!("({} & {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitOr(l, r) => format!("({} | {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitXor(l, r) => format!("({} ^ {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitNot(r) => format!("(~{})", r.to_cpp(st)?),
+            Expr::Shl(l, r) => format!("({} << {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Shr(l, r) => format!("({} >> {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Member(l, r) => format!("({}.{})", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Cast(l, r) => format!("(({}) {} )", r.to_cpp(st)?, l.to_cpp(st)?),
-            Expr::Size(_) => todo!(),
-            Expr::Align(_) => todo!(),
-            Expr::Assign(_l, _r) => todo!(),
-            Expr::AddAssign(_l, _r) => todo!(),
-            Expr::SubAssign(_l, _r) => todo!(),
-            Expr::MulAssign(_l, _r) => todo!(),
-            Expr::DivAssign(_l, _r) => todo!(),
-            Expr::ModAssign(_l, _r) => todo!(),
-            Expr::ShlAssign(_l, _r) => todo!(),
-            Expr::ShrAssign(_l, _r) => todo!(),
-            Expr::BitAndAssign(_l, _r) => todo!(),
-            Expr::BitXorAssign(_l, _r) => todo!(),
-            Expr::BitOrAssign(_l, _r) => todo!(),
+            Expr::Size(r) => format!("sizeof ({})", r.to_cpp(st)?),
+            Expr::Align(r) => format!("alignof ({})", r.to_cpp(st)?),
+            Expr::Assign(l, r) => format!("({} = {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::AddAssign(l, r) => format!("({} += {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::SubAssign(l, r) => format!("({} -= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::MulAssign(l, r) => format!("({} *= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::DivAssign(l, r) => format!("({} /= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::ModAssign(l, r) => format!("({} %= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::ShlAssign(l, r) => format!("({} <<= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::ShrAssign(l, r) => format!("({} >>= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitAndAssign(l, r) => format!("({} &= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitXorAssign(l, r) => format!("({} ^= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitOrAssign(l, r) => format!("({} |= {})", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Call(l, r, _) => format!("{}({})", l.to_cpp(st)?, r.to_owned().to_cpp(st)?),
-            Expr::ArrMember(_, _) => todo!(),
+            Expr::ArrMember(l, r) => format!("({}[{}])", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Tuple(_, _) => todo!(),
-            Expr::Array(_, _) => todo!(),
-            Expr::Unknown => todo!(),
+            Expr::Array(v, _) => {
+                let arr = v
+                    .iter()
+                    .map(|s| s.to_cpp(st))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .join(", ");
+
+                format!("{{ {} }}", arr)
+            }
+            Expr::Unknown => Err(Error::Compile("Unknown expression".to_owned(), self.span()))?,
         })
     }
 
@@ -123,17 +132,17 @@ impl ComfyType<String> for Expr {
             Expr::BitXorAssign(l, r) => SimpleSpan::new(l.span().start, r.span().end),
             Expr::BitOrAssign(l, r) => SimpleSpan::new(l.span().start, r.span().end),
             Expr::Call(_, _, s) => *s,
-            Expr::ArrMember(_, s) => *s,
+            Expr::ArrMember(l, r) => SimpleSpan::new(l.span().start, r.span().end),
             Expr::Tuple(_, s) => *s,
             Expr::Array(_, s) => *s,
             Expr::Unknown => SimpleSpan::new(0, 0),
         }
     }
 
-    fn resolve_type(&self, state: &mut State) -> CompileResult<Type> {
+    fn resolve_type(&self, st: &mut State) -> CompileResult<Type> {
         match self {
-            Expr::Literal(l) => l.resolve_type(state),
-            Expr::Type(t) => t.resolve_type(state),
+            Expr::Literal(l) => l.resolve_type(st),
+            Expr::Type(t) => t.resolve_type(st),
             Expr::Ident(_, _) => todo!(),
             Expr::Add(_, _) => todo!(),
             Expr::Sub(_, _) => todo!(),
@@ -182,8 +191,32 @@ impl ComfyType<String> for Expr {
             Expr::Call(_, _, _) => todo!(),
             Expr::ArrMember(_, _) => todo!(),
             Expr::Tuple(_, _) => todo!(),
-            Expr::Array(_, _) => todo!(),
-            Expr::Unknown => todo!(),
+            Expr::Array(v, s) => {
+                let size = v.len();
+                let typ = v.first().unwrap().resolve_type(st)?;
+
+                let mut errored = false;
+                for val in v.iter().skip(1) {
+                    let t = val.resolve_type(st)?;
+
+                    if t != typ {
+                        st.errors.push(Error::Compile(
+                            "Array types do not match".to_owned(),
+                            val.span(),
+                        ));
+
+                        errored = true;
+                    }
+                }
+
+                if errored {
+                    st.errors
+                        .push(Error::Compile("Array is not homogeneous".to_owned(), *s));
+                }
+
+                Ok(Type::Array(b(typ), size.try_into().unwrap(), *s))
+            }
+            Expr::Unknown => Err(Error::Compile("Unknown expression".to_owned(), self.span()))?,
         }
     }
 }

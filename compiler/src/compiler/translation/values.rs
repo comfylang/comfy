@@ -28,7 +28,7 @@ impl ComfyType<(String, TypeInfo)> for Type {
             Type::Void(_) => Ok(("void".to_owned(), not_arr)),
             Type::Never(_) => Ok(("void".to_owned(), not_arr)),
             Type::Unknown(s) => Err(Error::Compile(
-                "Type can't be resolved, specify it".to_owned(),
+                "Type can't be inferred, you need to specify it".to_owned(),
                 *s,
             )),
             Type::Tuple(_, _) => todo!(),
@@ -121,6 +121,8 @@ impl ComfyType<String> for Literal {
                 let i16 = v.parse::<i16>().is_ok();
                 let i32 = v.parse::<i32>().is_ok();
                 let i64 = v.parse::<i64>().is_ok();
+                let f32 = v.parse::<f32>().is_ok();
+                let f64 = v.parse::<f64>().is_ok();
 
                 match true {
                     _ if u8 => Ok(Type::U8(*s)),
@@ -131,6 +133,8 @@ impl ComfyType<String> for Literal {
                     _ if i16 => Ok(Type::I16(*s)),
                     _ if i32 => Ok(Type::I32(*s)),
                     _ if i64 => Ok(Type::I64(*s)),
+                    _ if f32 => Ok(Type::F32(*s)),
+                    _ if f64 => Ok(Type::F64(*s)),
                     _ => Err(Error::Compile("Invalid number literal".to_owned(), *s)),
                 }
             }

@@ -18,3 +18,4 @@ ariadne = "0.4.0"
 chumsky = { version = "=1.0.0-alpha.7", features = ["pratt", "label"] }
 clap = { version = "4.5.4", features = ["derive"] }
 comfy-types = { path = "../types", version = "0.1.0" }
+comfy-utils = { path = "../utils", version = "0.1.0" }

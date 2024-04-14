@@ -1,6 +1,6 @@
 use chumsky::span::SimpleSpan;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Bool(SimpleSpan),
 

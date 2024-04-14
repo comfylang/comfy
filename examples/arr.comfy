@@ -1,0 +1,13 @@
+/// Takes two numbers and returns their sum
+/// If no arguments are passed, the default values is 2
+fn sum(arr: [u8; 2]) -> i8 {
+  arr[0] + arr[1]
+}
+
+fn main() -> int {
+  let arr = [1, 0.2];
+  
+  printf("%d", sum(arr)); // Prints 3
+
+  0
+}

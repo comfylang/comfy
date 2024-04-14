@@ -8,10 +8,12 @@ use super::{ComfyType, CompileResult, State};
 
 fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
     let expr_ty = expr.resolve_type(st).unwrap_or_else(|_s| {
-        st.errors.push(Error::Compile(
-            "Cannot infer type of expression".to_owned(),
-            expr.span(),
-        ));
+        if let Type::Unknown(_) = ty {
+            st.errors.push(Error::Compile(
+                "Cannot infer type of expression".to_owned(),
+                expr.span(),
+            ));
+        }
 
         Type::Unknown(expr.span())
     });
@@ -89,7 +91,7 @@ impl ComfyType<String> for Statements {
     }
 
     fn resolve_type(&self, _: &mut State) -> CompileResult<Type> {
-        todo!()
+        Ok(Type::Unknown(self.span()))
     }
 }
 
@@ -110,7 +112,7 @@ impl ComfyType<String> for Vec<Statements> {
     }
 
     fn resolve_type(&self, _state: &mut State) -> CompileResult<Type> {
-        todo!()
+        Ok(Type::Unknown(self.span()))
     }
 }
 
@@ -145,6 +147,6 @@ impl ComfyType<String> for Vec<Argument> {
     }
 
     fn resolve_type(&self, _: &mut State) -> CompileResult<Type> {
-        todo!()
+        Ok(Type::Unknown(self.span()))
     }
 }
