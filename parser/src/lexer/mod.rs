@@ -1,5 +1,5 @@
 use chumsky::prelude::*;
-use comfy_types::tokens::{Literal, Token, TokenKind};
+use comfy_types::tokens::{Kind, Literal};
 
 use super::ParseError;
 
@@ -101,71 +101,75 @@ pub fn ident<'a>() -> impl Parser<'a, &'a str, String, ParseError<'a>> {
     text::ident().map(ToString::to_string)
 }
 
-pub fn token<'a>() -> impl Parser<'a, &'a str, Token, ParseError<'a>> {
+pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), ParseError<'a>> {
     let op1 = choice((
-        just(";").to(TokenKind::Semicolon),
-        just(",").to(TokenKind::Comma),
-        just(":").to(TokenKind::Colon),
-        just(".").to(TokenKind::Dot),
-        just("+").to(TokenKind::Plus),
-        just("-").to(TokenKind::Minus),
-        just("*").to(TokenKind::Star),
-        just("/").to(TokenKind::Slash),
-        just("^").to(TokenKind::Caret),
-        just("%").to(TokenKind::Percent),
-        just("&").to(TokenKind::Ampersand),
-        just("|").to(TokenKind::Pipe),
-        just("~").to(TokenKind::Tilde),
-        just("?").to(TokenKind::QuestionMark),
-        just("!").to(TokenKind::ExclamationMark),
-        just("=").to(TokenKind::Assign),
-        just("<").to(TokenKind::Less),
-        just(">").to(TokenKind::Greater),
-        just("(").to(TokenKind::LParen),
-        just(")").to(TokenKind::RParen),
-        just("{").to(TokenKind::LAngle),
-        just("}").to(TokenKind::RAngle),
-        just("[").to(TokenKind::LSquare),
-        just("]").to(TokenKind::RSquare),
+        just(";").to(Kind::Semicolon),
+        just(",").to(Kind::Comma),
+        just(":").to(Kind::Colon),
+        just(".").to(Kind::Dot),
+        just("+").to(Kind::Plus),
+        just("-").to(Kind::Minus),
+        just("*").to(Kind::Star),
+        just("/").to(Kind::Slash),
+        just("^").to(Kind::Caret),
+        just("%").to(Kind::Percent),
+        just("&").to(Kind::Ampersand),
+        just("|").to(Kind::Pipe),
+        just("~").to(Kind::Tilde),
+        just("?").to(Kind::QuestionMark),
+        just("!").to(Kind::ExclamationMark),
+        just("=").to(Kind::Assign),
+        just("<").to(Kind::Less),
+        just(">").to(Kind::Greater),
+        just("(").to(Kind::LParen),
+        just(")").to(Kind::RParen),
+        just("{").to(Kind::LAngle),
+        just("}").to(Kind::RAngle),
+        just("[").to(Kind::LSquare),
+        just("]").to(Kind::RSquare),
     ));
 
     let op2 = choice((
-        just("->").to(TokenKind::Arrow),
-        just("<<").to(TokenKind::LeftShift),
-        just(">>").to(TokenKind::RightShift),
-        just("++").to(TokenKind::PlusPlus),
-        just("--").to(TokenKind::MinusMinus),
-        just("+=").to(TokenKind::PlusAssign),
-        just("-=").to(TokenKind::MinusAssign),
-        just("*=").to(TokenKind::StarAssign),
-        just("/=").to(TokenKind::SlashAssign),
-        just("^=").to(TokenKind::CaretAssign),
-        just("%=").to(TokenKind::PercentAssign),
-        just("&=").to(TokenKind::AmpersandAssign),
-        just("|=").to(TokenKind::PipeAssign),
-        just("&&").to(TokenKind::AmpersandAmpersand),
-        just("||").to(TokenKind::PipePipe),
-        just("==").to(TokenKind::DoubleEqual),
-        just("!=").to(TokenKind::NotEqual),
-        just("<=").to(TokenKind::LessEqual),
-        just(">=").to(TokenKind::GreaterEqual),
+        just("->").to(Kind::Arrow),
+        just("<<").to(Kind::LeftShift),
+        just(">>").to(Kind::RightShift),
+        just("++").to(Kind::PlusPlus),
+        just("--").to(Kind::MinusMinus),
+        just("+=").to(Kind::PlusAssign),
+        just("-=").to(Kind::MinusAssign),
+        just("*=").to(Kind::StarAssign),
+        just("/=").to(Kind::SlashAssign),
+        just("^=").to(Kind::CaretAssign),
+        just("%=").to(Kind::PercentAssign),
+        just("&=").to(Kind::AmpersandAssign),
+        just("|=").to(Kind::PipeAssign),
+        just("&&").to(Kind::AmpersandAmpersand),
+        just("||").to(Kind::PipePipe),
+        just("==").to(Kind::DoubleEqual),
+        just("!=").to(Kind::NotEqual),
+        just("<=").to(Kind::LessEqual),
+        just(">=").to(Kind::GreaterEqual),
+        just("as").to(Kind::As),
+        just("priv").to(Kind::Priv),
+        just("pub").to(Kind::Pub),
+        just("prot").to(Kind::Prot),
     ));
 
     let ident = ident().map(|s| match s.as_str() {
-        "fn" => TokenKind::Fn,
-        "let" => TokenKind::Let,
-        "if" => TokenKind::If,
-        "else" => TokenKind::Else,
-        "return" => TokenKind::Return,
-        "while" => TokenKind::While,
-        "for" => TokenKind::For,
-        "in" => TokenKind::In,
-        "break" => TokenKind::Break,
-        "continue" => TokenKind::Continue,
-        _ => TokenKind::Identifier(s),
+        "fn" => Kind::Fn,
+        "let" => Kind::Let,
+        "if" => Kind::If,
+        "else" => Kind::Else,
+        "return" => Kind::Return,
+        "while" => Kind::While,
+        "for" => Kind::For,
+        "in" => Kind::In,
+        "break" => Kind::Break,
+        "continue" => Kind::Continue,
+        _ => Kind::Ident(s),
     });
 
-    let literal = literals().map(|l| TokenKind::Literal(l));
+    let literal = literals().map(|l| Kind::Literal(l));
 
     let token = op2.or(op1).or(literal).or(ident);
 
@@ -174,12 +178,12 @@ pub fn token<'a>() -> impl Parser<'a, &'a str, Token, ParseError<'a>> {
         .padded();
 
     token
-        .map_with(|s, e| Token(s, e.span()))
+        .map_with(|s, e| (s, e.span()))
         .padded_by(comment.repeated())
         .padded()
         .recover_with(skip_then_retry_until(any().ignored(), end()))
 }
 
-pub fn tokens<'a>() -> impl Parser<'a, &'a str, Vec<Token>, ParseError<'a>> {
+pub fn tokens<'a>() -> impl Parser<'a, &'a str, Vec<(Kind, SimpleSpan)>, ParseError<'a>> {
     token().repeated().collect()
 }

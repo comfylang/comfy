@@ -6,7 +6,7 @@ use ariadne::{Color, Label, Report, ReportKind, Source};
 
 use chumsky::Parser as ChumskyParser;
 use colored::*;
-use comfy_parser::statements;
+use comfy_parser::{parse, statements};
 use compiler::{Compiler, Error};
 
 mod compiler;
@@ -29,44 +29,30 @@ fn main() {
 
     let output_file = &args.output_file;
 
-    match statements().parse(&src).into_result() {
-        Ok(ast) => {
-            println!("AST: {:#?}", ast);
+    let ast = parse(src_file, src.clone());
 
-            let mut compiler = Compiler::new(ast);
+    if let Ok(ast) = ast {
+        let mut compiler = Compiler::new(ast);
 
-            let compiled = compiler.compile(output_file);
+        let compiled = compiler.compile(output_file);
 
-            match compiled {
-                Ok(compiled) => {
-                    println!("{}", compiled);
-                }
-                Err(e) => e.into_iter().for_each(|e| match e {
-                    Error::Compile(msg, s) => Report::build(ReportKind::Error, src_file, s.start)
-                        .with_message(msg.clone())
-                        .with_label(
-                            Label::new((src_file, s.into_range()))
-                                .with_message(msg.to_string())
-                                .with_color(Color::Red),
-                        )
-                        .finish()
-                        .print((src_file, Source::from(&src)))
-                        .unwrap(),
-                    Error::Clang(msg) => eprintln!("{}", msg.red().bold()),
-                }),
+        match compiled {
+            Ok(compiled) => {
+                println!("{}", compiled);
             }
+            Err(e) => e.into_iter().for_each(|e| match e {
+                Error::Compile(msg, s) => Report::build(ReportKind::Error, src_file, s.start)
+                    .with_message(msg.clone())
+                    .with_label(
+                        Label::new((src_file, s.into_range()))
+                            .with_message(msg.to_string())
+                            .with_color(Color::Red),
+                    )
+                    .finish()
+                    .print((src_file, Source::from(&src)))
+                    .unwrap(),
+                Error::Clang(msg) => eprintln!("{}", msg.red().bold()),
+            }),
         }
-        Err(parse_errs) => parse_errs.into_iter().for_each(|e| {
-            Report::build(ReportKind::Error, src_file, e.span().start)
-                .with_message(e.to_string())
-                .with_label(
-                    Label::new((src_file, e.span().into_range()))
-                        .with_message(e.reason().to_string())
-                        .with_color(Color::Red),
-                )
-                .finish()
-                .print((src_file, Source::from(&src)))
-                .unwrap()
-        }),
-    };
+    }
 }
