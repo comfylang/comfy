@@ -31,6 +31,8 @@ fn main() {
 
     match statements().parse(&src).into_result() {
         Ok(ast) => {
+            println!("AST: {:#?}", ast);
+
             let mut compiler = Compiler::new(ast);
 
             let compiled = compiler.compile(output_file);

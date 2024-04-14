@@ -30,20 +30,28 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
         just("f128").map_with(to!(Type::F128)),
         just("int").map_with(to!(Type::Int)),
         just("uint").map_with(to!(Type::Uint)),
-    ));
+    ))
+    .labelled("numeric type");
 
     let textual = choice((
         just("char").map_with(to!(Type::Char)),
         just("str").map_with(to!(Type::Str)),
-    ));
+    ))
+    .labelled("textual type");
 
     let unknown = choice((
         just("void").map_with(to!(Type::Void)),
         just("never").map_with(to!(Type::Never)),
-    ));
+    ))
+    .labelled("void/never type");
 
-    let simple_types = choice((bool, numeric, textual, unknown)).boxed();
-    let custom = ident().map_with(|s, e| Type::Custom(s, e.span())).boxed();
+    let simple_types = choice((bool, numeric, textual, unknown))
+        .labelled("simple type")
+        .boxed();
+    let custom = ident()
+        .map_with(|s, e| Type::Custom(s, e.span()))
+        .labelled("user-defined type")
+        .boxed();
 
     let complex_types = recursive(|complex| {
         let t = simple_types.clone().or(complex).or(custom);
@@ -55,7 +63,8 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .collect()
             .padded_by(pad())
             .delimited_by(justp("("), justp(")"))
-            .map_with(|s, e| Type::Tuple(s, e.span()));
+            .map_with(|s, e| Type::Tuple(s, e.span()))
+            .labelled("tuple type");
 
         let array = t
             .clone()
@@ -63,26 +72,31 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
             .then(text::int(10).to_slice())
             .padded_by(pad())
             .delimited_by(justp("["), justp("]"))
-            .map_with(|(ty, size), e| Type::Array(Box::new(ty), size.parse().unwrap(), e.span()));
+            .map_with(|(ty, size), e| Type::Array(Box::new(ty), size.parse().unwrap(), e.span()))
+            .labelled("array type");
 
         let slice = t
             .clone()
             .padded_by(pad())
             .delimited_by(justp("["), justp("]"))
-            .map_with(|ty, e| Type::Slice(Box::new(ty), e.span()));
+            .map_with(|ty, e| Type::Slice(Box::new(ty), e.span()))
+            .labelled("slice type");
 
         let pointer = justp("*")
             .ignore_then(t.clone())
-            .map_with(|ty, e| Type::Pointer(Box::new(ty), e.span()));
+            .map_with(|ty, e| Type::Pointer(Box::new(ty), e.span()))
+            .labelled("pointer type");
 
         let mutable = justp("&mut")
             .padded_by(pad())
             .ignore_then(t.clone())
-            .map_with(|ty, e| Type::MutableRef(Box::new(ty), e.span()));
+            .map_with(|ty, e| Type::MutableRef(Box::new(ty), e.span()))
+            .labelled("mutable reference type");
 
         let reference = justp("&")
             .ignore_then(t.clone())
-            .map_with(|ty, e| Type::Reference(Box::new(ty), e.span()));
+            .map_with(|ty, e| Type::Reference(Box::new(ty), e.span()))
+            .labelled("reference type");
 
         let generic = ident()
             .then(
@@ -92,9 +106,12 @@ pub fn types<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
                     .padded_by(pad())
                     .delimited_by(justp("<"), justp(">")),
             )
-            .map_with(|(name, types), e| Type::Generic(name, types, e.span()));
+            .map_with(|(name, types), e| Type::Generic(name, types, e.span()))
+            .labelled("generic type");
 
-        choice((tuple, array, slice, pointer, mutable, reference, generic)).boxed()
+        choice((tuple, array, slice, pointer, mutable, reference, generic))
+            .labelled("complex type")
+            .boxed()
     });
 
     choice((complex_types, simple_types)).padded_by(pad())

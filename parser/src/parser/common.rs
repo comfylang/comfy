@@ -13,6 +13,7 @@ pub fn access_modifier<'a>() -> impl Parser<'a, &'a str, AccessModifier, ParseEr
         just("priv").map_with(|_, s| AccessModifier::Private(s.span())),
         just("prot").map_with(|_, s| AccessModifier::Protected(s.span())),
     ))
+    .labelled("access modifier")
     .padded_by(pad())
 }
 
@@ -21,6 +22,7 @@ pub fn type_descriptor<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>> {
         .ignore_then(types().padded_by(pad()))
         .or_not()
         .map_with(|t, e| t.unwrap_or(Type::Unknown(e.span())))
+        .labelled("type descriptor")
         .boxed()
 }
 
@@ -29,11 +31,12 @@ pub fn fn_type_descriptor<'a>() -> impl Parser<'a, &'a str, Type, ParseError<'a>
         .ignore_then(types().padded_by(pad()))
         .or_not()
         .map_with(|t, e| t.unwrap_or(Type::Unknown(e.span())))
+        .labelled("function return type")
         .boxed()
 }
 
 pub fn assignment<'a>() -> impl Parser<'a, &'a str, Expr, ParseError<'a>> {
-    justp("=").ignore_then(expressions())
+    justp("=").ignore_then(expressions()).labelled("assignment")
 }
 
 pub fn justp<'a>(p: &'a str) -> impl Parser<'a, &'a str, (), ParseError<'a>> {
@@ -54,12 +57,12 @@ pub fn decl_args<'a>() -> impl Parser<'a, &'a str, Vec<Argument>, ParseError<'a>
         .then(type_descriptor())
         .then(assignment().or_not())
         .padded_by(pad())
-        .map_with(|((name, ty), exp), e| {
-            Argument(name, ty, exp.unwrap_or(Expr::Unknown), e.span())
-        });
+        .map_with(|((name, ty), exp), e| Argument(name, ty, exp.unwrap_or(Expr::Unknown), e.span()))
+        .labelled("argument");
 
     arg.separated_by(justp(","))
         .allow_trailing()
         .collect()
+        .labelled("arguments")
         .padded_by(pad())
 }
