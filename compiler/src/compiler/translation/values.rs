@@ -1,4 +1,7 @@
-use chumsky::span::SimpleSpan;
+use chumsky::{
+    error::Simple,
+    span::{SimpleSpan, Span},
+};
 use comfy_types::{Literal, Type};
 
 use super::{ComfyNode, CompileResult, Error, State, TypeInfo};

@@ -5,12 +5,17 @@ use comfy_types::tokens::TokenInput;
 use comfy_types::Expr;
 use comfy_utils::b;
 
+use super::common::cpp_code;
 use super::ParseError;
 
 use super::types::types;
 use super::{common::ident, literals::literals};
 
 pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {
+    let cpp_code = cpp_code()
+        .map_with(|s, e| Expr::CppCode(s, e.span()))
+        .boxed();
+
     let id = ident().map_with(|s, e| Expr::Ident(s, e.span())).boxed();
 
     let lit = literals().map(|l| Expr::Literal(l)).boxed();
@@ -45,6 +50,7 @@ pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>
             .or(ty)
             .or(arr_expr)
             .or(tuple_expr)
+            .or(cpp_code)
             .or(id)
             .boxed();
 

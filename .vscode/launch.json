@@ -1,0 +1,139 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'comfy-types'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=comfy-types"
+        ],
+        "filter": {
+          "name": "comfy-types",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'comfy-utils'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=comfy-utils"
+        ],
+        "filter": {
+          "name": "comfy-utils",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'comfy-parser'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=comfy-parser"
+        ],
+        "filter": {
+          "name": "comfy-parser",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'comfy-parser'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=comfy-parser",
+          "--package=comfy-parser"
+        ],
+        "filter": {
+          "name": "comfy-parser",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'comfy-parser'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=comfy-parser",
+          "--package=comfy-parser"
+        ],
+        "filter": {
+          "name": "comfy-parser",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'comfy-compiler'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=comfy-compiler",
+          "--package=comfy-compiler"
+        ],
+        "filter": {
+          "name": "comfy-compiler",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'comfy-compiler'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=comfy-compiler",
+          "--package=comfy-compiler"
+        ],
+        "filter": {
+          "name": "comfy-compiler",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

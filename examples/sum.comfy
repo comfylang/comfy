@@ -1,15 +1,20 @@
 /// Takes two numbers and returns their sum
 /// If no arguments are passed, the default values is 2
-fn sum(a = 2, b = 2) -> i8 {
+fn sum(a = 2, b = 2) -> u8 {
   a + b
+}
+
+fn print(val: u8) -> void {
+  raw_cpp#printf("%d\n", val)#;
 }
 
 fn main() -> int {
   let a = 1; // First argument
   let b = 2; // Second argument
   
-  printf("%d", sum(a, b)); // Prints 3
-  printf("\n%d\n", sum()); // Prints 4
+  print(sum(a, b)); // Prints 3
+  print(sum()); // Prints 4
+  print(sum(3)); // Prints 5
 
   0
 }

@@ -1,7 +1,7 @@
 use chumsky::span::SimpleSpan;
-use enum_procs::PartialEqVariant;
+use enum_procs::PartialEqExceptLast;
 
-#[derive(Debug, Clone, PartialEqVariant)]
+#[derive(Debug, Clone, PartialEqExceptLast)]
 pub enum Type {
     Bool(SimpleSpan),
     // Numeric

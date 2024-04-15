@@ -2,11 +2,12 @@ use chumsky::span::SimpleSpan;
 
 use crate::{Literal, Type};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     // Atomic
     Literal(Literal),
     Type(Type),
+    CppCode(String, SimpleSpan),
     Ident(String, SimpleSpan),
 
     // Arithmetic

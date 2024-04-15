@@ -124,6 +124,9 @@ pub enum Kind {
     // Identifiers
     Ident(String),
 
+    //C-code
+    CppCode(String),
+
     // Literals
     Literal(Literal),
 }
@@ -194,6 +197,7 @@ impl fmt::Display for Kind {
             Kind::Pub => write!(f, "pub"),
             Kind::Priv => write!(f, "priv"),
             Kind::Prot => write!(f, "prot"),
+            Kind::CppCode(v) => write!(f, "raw_cpp# {} #", v),
         }
     }
 }

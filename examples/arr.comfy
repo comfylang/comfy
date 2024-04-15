@@ -1,15 +1,17 @@
 /// Takes two numbers and returns their sum
 /// If no arguments are passed, the default values is 2
-fn sum(arr: [u8; 2]) -> i8 {
+fn sum(arr: [u8; 2]) -> u8 {
   arr[0] + arr[1]
+}
+
+fn print(val: u8) -> void {
+  raw_cpp#printf("%d", val)#;
 }
 
 fn main() -> int {
   let arr = [1, 2];
   
-  //printf("%d", sum(arr, 1)); // Prints 3
-
-  sum(arr);
+  print(sum(arr)); // Prints 3
 
   0
 }

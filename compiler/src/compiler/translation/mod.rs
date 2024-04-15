@@ -11,7 +11,7 @@ pub mod values;
 pub trait ComfyNode<T> {
     fn to_cpp(&self, state: &mut State) -> CompileResult<T>;
     fn span(&self) -> SimpleSpan;
-    fn resolve_ident(&self, state: &mut State) -> CompileResult<Ident> {
+    fn resolve_ident(&self, _state: &mut State) -> CompileResult<Ident> {
         Err(Error::Compile(format!("Unimplemented"), self.span()))
     }
     fn resolve_type(&self, state: &mut State) -> CompileResult<Type>;
@@ -118,4 +118,4 @@ impl State {
     }
 }
 
-pub struct TypeInfo(bool, Option<u64>);
+pub struct TypeInfo(pub bool, pub Option<u64>);

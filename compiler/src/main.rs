@@ -34,7 +34,7 @@ fn main() {
                     );
                     println!(
                         "\n{} \n\n{}\n",
-                        "Tranlated code:".bold().green(),
+                        "Translated code:".bold().green(),
                         inc_indent(compiled.code)
                     );
                     println!(

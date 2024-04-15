@@ -4,11 +4,11 @@ use chumsky::span::SimpleSpan;
 use comfy_types::{Argument, Expr, Statements, Type};
 use comfy_utils::inc_indent;
 
-use crate::compiler::Error;
+use crate::compiler::{Error, TypeInfo};
 
 use super::{ComfyNode, CompileResult, State};
 
-fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
+fn get_real_type_of_argument(st: &mut State, ty: &Type, expr: &Expr) -> CompileResult<Type> {
     let expr_ty = expr.resolve_type(st).unwrap_or_else(|_s| {
         if let Type::Unknown(_) = ty {
             st.errors.push(Error::Compile(
@@ -24,6 +24,12 @@ fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResu
         Type::Unknown(_) => expr_ty,
         _ => ty.clone(),
     };
+
+    Ok(real_type)
+}
+
+fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
+    let real_type = get_real_type_of_argument(st, ty, expr)?;
 
     let cty = real_type.to_cpp(st)?;
 
@@ -65,11 +71,32 @@ impl ComfyNode<String> for Statements {
                 format!("{};", typed_name(st, name, ty, expr)?)
             }
             Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, _s) => {
-                st.add_func(name, ty.clone(), args.clone());
+                let des = args
+                    .into_iter()
+                    .map(|a| {
+                        let a = a.clone();
+
+                        let ty = get_real_type_of_argument(st, &a.1, &a.2)?;
+
+                        Ok(Argument(a.0, ty, a.2, a.3))
+                    })
+                    .collect::<CompileResult<Vec<_>>>()?;
+
+                st.add_func(name, ty.clone(), des);
 
                 st.scope_stack.push(HashMap::new());
 
-                let cty = ty.to_cpp(st)?;
+                let cty = ty.to_cpp(st);
+
+                let cty: (String, TypeInfo) = if let Err(_) = cty {
+                    st.errors.push(Error::Compile(
+                        "Return type of function cannot be resolved".to_owned(),
+                        self.span(),
+                    ));
+                    ("{unknown}".to_owned(), TypeInfo(false, None))
+                } else {
+                    cty.unwrap()
+                };
 
                 if cty.1 .0 {
                     // TODO: support arrays

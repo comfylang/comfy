@@ -18,6 +18,12 @@ pub fn lit<'a>() -> impl Parser<'a, TokenInput<'a>, tokens::Literal, ParseError<
     }
 }
 
+pub fn cpp_code<'a>() -> impl Parser<'a, TokenInput<'a>, String, ParseError<'a>> {
+    select! {
+        Kind::CppCode(s) => s
+    }
+}
+
 pub fn access_modifier<'a>() -> impl Parser<'a, TokenInput<'a>, AccessModifier, ParseError<'a>> {
     choice((
         just(Kind::Pub).map_with(|_, s| AccessModifier::Public(s.span())),
@@ -38,11 +44,14 @@ pub fn type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseError
 
 pub fn fn_type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseError<'a>> {
     just(Kind::Arrow)
-        .ignore_then(types())
+        .ignore_then(types().labelled("function return type").boxed())
         .or_not()
-        .map_with(|t, e| t.unwrap_or(Type::Unknown(e.span())))
-        .labelled("function return type")
-        .boxed()
+        .map_with(|t, e| {
+            t.unwrap_or_else(|| {
+                let start = e.span().end;
+                Type::Unknown(SimpleSpan::new(start, start))
+            })
+        })
 }
 
 pub fn assignment<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {

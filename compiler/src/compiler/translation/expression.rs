@@ -72,7 +72,7 @@ impl ComfyNode<String> for Expr {
             Expr::Shl(l, r) => cast_format!(l, "<<", r, st, self),
             Expr::Shr(l, r) => cast_format!(l, ">>", r, st, self),
             Expr::Member(l, r) => format!("({}.{})", l.to_cpp(st)?, r.to_cpp(st)?), // TODO: check if member exists
-            Expr::Cast(l, r) => format!("(static_cast<{}>({}))", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Cast(l, r) => format!("(static_cast<{}>({}))", r.to_cpp(st)?, l.to_cpp(st)?),
             Expr::Size(r) => format!("(sizeof({}))", r.to_cpp(st)?),
             Expr::Align(r) => format!("(alignof({}))", r.to_cpp(st)?),
             Expr::Assign(l, r) => cast_format!(l, "=", r, st, self),
@@ -93,32 +93,40 @@ impl ComfyNode<String> for Expr {
 
                 match &ident.value {
                     IdentValue::Func(ident_args) => {
-                        if args.len() != ident_args.len() {
+                        let filtered_default_args = ident_args
+                            .iter()
+                            .filter(|arg| arg.2 == Expr::Unknown)
+                            .collect::<Vec<_>>();
+
+                        if args.len() < filtered_default_args.len() {
                             st.errors.push(Error::Compile(
                                 format!(
-                                    "Expected {} argument(s), got {}",
-                                    ident_args.len(),
+                                    "Expected at least {} argument(s), got {}",
+                                    filtered_default_args.len(),
                                     args.len()
                                 ),
-                                args.span(),
+                                self.span(),
                             ));
                         } else {
                             let args_types = args
                                 .iter()
+                                .skip(1)
                                 .map(|arg| arg.resolve_type(st))
                                 .collect::<Result<Vec<_>, _>>()?;
 
-                            for (ident_arg_t, arg_t) in ident_args.iter().zip(args_types) {
+                            for ((ident_arg_t, arg_t), arg) in
+                                ident_args.iter().zip(args_types).zip(args)
+                            {
                                 if !ident_arg_t.1.casted_to(&arg_t, st) {
                                     return Err(Error::Compile(
                                         format!("Expected type {}, got {}", ident_arg_t.1, arg_t),
-                                        arg_t.span(),
+                                        arg.span(),
                                     ));
                                 }
                             }
                         }
 
-                        format!("{}({})", cfun, ident_args.to_owned().to_cpp(st)?)
+                        format!("{}({})", cfun, args.to_cpp(st)?)
                     }
                     IdentValue::Variable => Err(Error::Compile(
                         format!("Cannot call variable `{}`", cfun),
@@ -138,6 +146,7 @@ impl ComfyNode<String> for Expr {
                 format!("{{ {} }}", arr)
             }
             Expr::Unknown => Err(Error::Compile("Unknown expression".to_owned(), self.span()))?,
+            Expr::CppCode(v, _) => format!("{}", v),
         })
     }
 
@@ -195,6 +204,7 @@ impl ComfyNode<String> for Expr {
             Expr::Tuple(_, s) => *s,
             Expr::Array(_, s) => *s,
             Expr::Unknown => SimpleSpan::new(0, 0),
+            Expr::CppCode(_, s) => *s,
         }
     }
 
@@ -247,7 +257,7 @@ impl ComfyNode<String> for Expr {
             Expr::BitAndAssign(l, r) => cast!(l, r, st),
             Expr::BitXorAssign(l, r) => cast!(l, r, st),
             Expr::BitOrAssign(l, r) => cast!(l, r, st),
-            Expr::Call(l, _, r) => todo!(),
+            Expr::Call(l, _, _) => l.resolve_type(st),
             Expr::ArrMember(arr, _) => {
                 let t = arr.resolve_type(st)?;
 
@@ -287,6 +297,10 @@ impl ComfyNode<String> for Expr {
                 Ok(Type::Array(b(typ), size.try_into().unwrap(), *s))
             }
             Expr::Unknown => Err(Error::Compile("Unknown expression".to_owned(), self.span()))?,
+            Expr::CppCode(_, _) => Err(Error::Compile(
+                "Type of cpp code cannot be resolved".to_owned(),
+                self.span(),
+            ))?,
         }
     }
 
@@ -311,10 +325,10 @@ impl ComfyNode<String> for Vec<Expr> {
     }
 
     fn span(&self) -> SimpleSpan {
-        let start = self.first().unwrap().span().start;
-        let end = self.last().unwrap().span().end;
+        let first = self.first().unwrap_or(&Expr::Unknown).span();
+        let last = self.last().unwrap_or(&Expr::Unknown).span();
 
-        SimpleSpan::new(start, end)
+        SimpleSpan::new(first.start, last.end)
     }
 
     fn resolve_type(&self, _: &mut State) -> CompileResult<comfy_types::Type> {
