@@ -1,33 +1,53 @@
 use chumsky::span::SimpleSpan;
 use comfy_types::{Expr, Type};
-use comfy_utils::{b, inc_indent};
+use comfy_utils::b;
 
-use super::{ComfyType, CompileResult, Error, State};
+use super::{ComfyNode, CompileResult, Error, State};
 
-impl ComfyType<String> for Expr {
+#[macro_export]
+macro_rules! cast_format {
+    ($l: ident, $op: literal, $r: ident, $st: ident, $self: ident) => {
+        if $l.casted_to(&$r.resolve_type($st)?, $st) {
+            format!("({} {} {})", $l.to_cpp($st)?, $op, $r.to_cpp($st)?)
+        } else {
+            Err(Error::Compile(
+                format!("Cannot cast types, do it manually"),
+                $self.span(),
+            ))?
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! cast {
+    ($l: ident, $r: ident, $st: ident) => {
+        $l.cast_to(&$r.resolve_type($st)?, $st)
+    };
+}
+
+impl ComfyNode<String> for Expr {
     fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
             Expr::Literal(l) => l.to_cpp(st)?,
             Expr::Type(t) => {
                 let ct = t.to_cpp(st)?;
-                let span = self.span();
 
                 if ct.1 .0 {
                     st.errors.push(Error::Compile(
                         "Cannot cast to array-like type".to_owned(),
-                        span,
+                        self.span(),
                     ));
                 }
 
                 ct.0
             }
             Expr::Ident(i, _) => i.into(),
-            Expr::Add(l, r) => format!("({} + {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Sub(l, r) => format!("({} - {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Mul(l, r) => format!("({} * {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Div(l, r) => format!("({} / {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Mod(l, r) => format!("({} % {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Neg(l) => format!("-({})", l.to_cpp(st)?),
+            Expr::Add(l, r) => cast_format!(l, "+", r, st, self),
+            Expr::Sub(l, r) => cast_format!(l, "-", r, st, self),
+            Expr::Mul(l, r) => cast_format!(l, "*", r, st, self),
+            Expr::Div(l, r) => cast_format!(l, "/", r, st, self),
+            Expr::Mod(l, r) => cast_format!(l, "%", r, st, self),
+            Expr::Neg(l) => format!("(-{})", l.to_cpp(st)?),
             Expr::Pos(l) => format!("({})", l.to_cpp(st)?),
             Expr::IncR(l) => format!("({}++)", l.to_cpp(st)?),
             Expr::IncL(r) => format!("(++{})", r.to_cpp(st)?),
@@ -36,36 +56,36 @@ impl ComfyType<String> for Expr {
             Expr::Factorial(_) => todo!(),
             Expr::Deref(r) => format!("(*{})", r.to_cpp(st)?),
             Expr::Address(r) => format!("(&{})", r.to_cpp(st)?),
-            Expr::Eq(l, r) => format!("({} == {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Ne(l, r) => format!("({} != {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Lt(l, r) => format!("({} < {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Le(l, r) => format!("({} <= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Gt(l, r) => format!("({} > {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Ge(l, r) => format!("({} >= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::And(l, r) => format!("({} && {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Or(l, r) => format!("({} || {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Eq(l, r) => cast_format!(l, "==", r, st, self),
+            Expr::Ne(l, r) => cast_format!(l, "!=", r, st, self),
+            Expr::Lt(l, r) => cast_format!(l, "<", r, st, self),
+            Expr::Le(l, r) => cast_format!(l, "<=", r, st, self),
+            Expr::Gt(l, r) => cast_format!(l, ">", r, st, self),
+            Expr::Ge(l, r) => cast_format!(l, ">=", r, st, self),
+            Expr::And(l, r) => cast_format!(l, "&&", r, st, self),
+            Expr::Or(l, r) => cast_format!(l, "||", r, st, self),
             Expr::Not(r) => format!("(!{})", r.to_cpp(st)?),
-            Expr::BitAnd(l, r) => format!("({} & {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::BitOr(l, r) => format!("({} | {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::BitXor(l, r) => format!("({} ^ {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::BitAnd(l, r) => cast_format!(l, "&", r, st, self),
+            Expr::BitOr(l, r) => cast_format!(l, "|", r, st, self),
+            Expr::BitXor(l, r) => cast_format!(l, "^", r, st, self),
             Expr::BitNot(r) => format!("(~{})", r.to_cpp(st)?),
-            Expr::Shl(l, r) => format!("({} << {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Shr(l, r) => format!("({} >> {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Member(l, r) => format!("({}.{})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::Cast(l, r) => format!("(({}) {} )", r.to_cpp(st)?, l.to_cpp(st)?),
-            Expr::Size(r) => format!("sizeof ({})", r.to_cpp(st)?),
-            Expr::Align(r) => format!("alignof ({})", r.to_cpp(st)?),
-            Expr::Assign(l, r) => format!("({} = {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::AddAssign(l, r) => format!("({} += {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::SubAssign(l, r) => format!("({} -= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::MulAssign(l, r) => format!("({} *= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::DivAssign(l, r) => format!("({} /= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::ModAssign(l, r) => format!("({} %= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::ShlAssign(l, r) => format!("({} <<= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::ShrAssign(l, r) => format!("({} >>= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::BitAndAssign(l, r) => format!("({} &= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::BitXorAssign(l, r) => format!("({} ^= {})", l.to_cpp(st)?, r.to_cpp(st)?),
-            Expr::BitOrAssign(l, r) => format!("({} |= {})", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Shl(l, r) => cast_format!(l, "<<", r, st, self),
+            Expr::Shr(l, r) => cast_format!(l, ">>", r, st, self),
+            Expr::Member(l, r) => format!("({}.{})", l.to_cpp(st)?, r.to_cpp(st)?), // TODO: check if member exists
+            Expr::Cast(l, r) => format!("(static_cast<{}>({}))", l.to_cpp(st)?, r.to_cpp(st)?),
+            Expr::Size(r) => format!("(sizeof({}))", r.to_cpp(st)?),
+            Expr::Align(r) => format!("(alignof({}))", r.to_cpp(st)?),
+            Expr::Assign(l, r) => cast_format!(l, "=", r, st, self),
+            Expr::AddAssign(l, r) => cast_format!(l, "+=", r, st, self),
+            Expr::SubAssign(l, r) => cast_format!(l, "-=", r, st, self),
+            Expr::MulAssign(l, r) => cast_format!(l, "*=", r, st, self),
+            Expr::DivAssign(l, r) => cast_format!(l, "/=", r, st, self),
+            Expr::ModAssign(l, r) => cast_format!(l, "%=", r, st, self),
+            Expr::ShlAssign(l, r) => cast_format!(l, "<<=", r, st, self),
+            Expr::ShrAssign(l, r) => cast_format!(l, ">>=", r, st, self),
+            Expr::BitAndAssign(l, r) => cast_format!(l, "&=", r, st, self),
+            Expr::BitXorAssign(l, r) => cast_format!(l, "^=", r, st, self),
+            Expr::BitOrAssign(l, r) => cast_format!(l, "|=", r, st, self),
             Expr::Call(l, r, _) => format!("{}({})", l.to_cpp(st)?, r.to_owned().to_cpp(st)?),
             Expr::ArrMember(l, r) => format!("({}[{}])", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Tuple(_, _) => todo!(),
@@ -143,54 +163,65 @@ impl ComfyType<String> for Expr {
         match self {
             Expr::Literal(l) => l.resolve_type(st),
             Expr::Type(t) => t.resolve_type(st),
-            Expr::Ident(_, _) => todo!(),
-            Expr::Add(_, _) => todo!(),
-            Expr::Sub(_, _) => todo!(),
-            Expr::Mul(_, _) => todo!(),
-            Expr::Div(_, _) => todo!(),
-            Expr::Mod(_, _) => todo!(),
-            Expr::Neg(_) => todo!(),
-            Expr::Pos(_) => todo!(),
-            Expr::IncR(_) => todo!(),
-            Expr::IncL(_) => todo!(),
-            Expr::DecR(_) => todo!(),
-            Expr::DecL(_) => todo!(),
-            Expr::Factorial(_) => todo!(),
-            Expr::Deref(_) => todo!(),
-            Expr::Address(_) => todo!(),
-            Expr::Eq(_, _) => todo!(),
-            Expr::Ne(_, _) => todo!(),
-            Expr::Lt(_, _) => todo!(),
-            Expr::Le(_, _) => todo!(),
-            Expr::Gt(_, _) => todo!(),
-            Expr::Ge(_, _) => todo!(),
-            Expr::And(_, _) => todo!(),
-            Expr::Or(_, _) => todo!(),
-            Expr::Not(_) => todo!(),
-            Expr::BitAnd(_, _) => todo!(),
-            Expr::BitOr(_, _) => todo!(),
-            Expr::BitXor(_, _) => todo!(),
-            Expr::BitNot(_) => todo!(),
-            Expr::Shl(_, _) => todo!(),
-            Expr::Shr(_, _) => todo!(),
-            Expr::Member(_, _) => todo!(),
-            Expr::Cast(_, _) => todo!(),
-            Expr::Size(_) => todo!(),
-            Expr::Align(_) => todo!(),
-            Expr::Assign(_, _) => todo!(),
-            Expr::AddAssign(_, _) => todo!(),
-            Expr::SubAssign(_, _) => todo!(),
-            Expr::MulAssign(_, _) => todo!(),
-            Expr::DivAssign(_, _) => todo!(),
-            Expr::ModAssign(_, _) => todo!(),
-            Expr::ShlAssign(_, _) => todo!(),
-            Expr::ShrAssign(_, _) => todo!(),
-            Expr::BitAndAssign(_, _) => todo!(),
-            Expr::BitXorAssign(_, _) => todo!(),
-            Expr::BitOrAssign(_, _) => todo!(),
-            Expr::Call(_, _, _) => todo!(),
-            Expr::ArrMember(_, _) => todo!(),
-            Expr::Tuple(_, _) => todo!(),
+            Expr::Ident(name, s) => Ok(st.get_ident(name, *s)?.return_type.clone()),
+            Expr::Add(l, r) => cast!(l, r, st),
+            Expr::Sub(l, r) => cast!(l, r, st),
+            Expr::Mul(l, r) => cast!(l, r, st),
+            Expr::Div(l, r) => cast!(l, r, st),
+            Expr::Mod(l, r) => cast!(l, r, st),
+            Expr::Neg(r) => r.resolve_type(st),
+            Expr::Pos(r) => r.resolve_type(st),
+            Expr::IncR(r) => r.resolve_type(st),
+            Expr::IncL(r) => r.resolve_type(st),
+            Expr::DecR(r) => r.resolve_type(st),
+            Expr::DecL(r) => r.resolve_type(st),
+            Expr::Factorial(r) => r.resolve_type(st),
+            Expr::Deref(r) => r.resolve_type(st),
+            Expr::Address(r) => r.resolve_type(st),
+            Expr::Eq(l, r) => cast!(l, r, st),
+            Expr::Ne(l, r) => cast!(l, r, st),
+            Expr::Lt(l, r) => cast!(l, r, st),
+            Expr::Le(l, r) => cast!(l, r, st),
+            Expr::Gt(l, r) => cast!(l, r, st),
+            Expr::Ge(l, r) => cast!(l, r, st),
+            Expr::And(l, r) => cast!(l, r, st),
+            Expr::Or(l, r) => cast!(l, r, st),
+            Expr::Not(r) => r.resolve_type(st),
+            Expr::BitAnd(l, r) => cast!(l, r, st),
+            Expr::BitOr(l, r) => cast!(l, r, st),
+            Expr::BitXor(l, r) => cast!(l, r, st),
+            Expr::BitNot(r) => r.resolve_type(st),
+            Expr::Shl(l, r) => cast!(l, r, st),
+            Expr::Shr(l, r) => cast!(l, r, st),
+            Expr::Member(l, r) => cast!(l, r, st),
+            Expr::Cast(l, r) => cast!(l, r, st),
+            Expr::Size(r) => todo!(),
+            Expr::Align(r) => todo!(),
+            Expr::Assign(l, r) => cast!(l, r, st),
+            Expr::AddAssign(l, r) => cast!(l, r, st),
+            Expr::SubAssign(l, r) => cast!(l, r, st),
+            Expr::MulAssign(l, r) => cast!(l, r, st),
+            Expr::DivAssign(l, r) => cast!(l, r, st),
+            Expr::ModAssign(l, r) => cast!(l, r, st),
+            Expr::ShlAssign(l, r) => cast!(l, r, st),
+            Expr::ShrAssign(l, r) => cast!(l, r, st),
+            Expr::BitAndAssign(l, r) => cast!(l, r, st),
+            Expr::BitXorAssign(l, r) => cast!(l, r, st),
+            Expr::BitOrAssign(l, r) => cast!(l, r, st),
+            Expr::Call(l, _, r) => todo!(),
+            Expr::ArrMember(arr, _) => {
+                let t = arr.resolve_type(st)?;
+
+                match t {
+                    Type::Array(t, _, _) => Ok(*t),
+
+                    _ => Err(Error::Compile(
+                        "Cannot get member of non array type".to_owned(),
+                        self.span(),
+                    )),
+                }
+            }
+            Expr::Tuple(l, r) => todo!(),
             Expr::Array(v, s) => {
                 let size = v.len();
                 let typ = v.first().unwrap().resolve_type(st)?;
@@ -201,7 +232,7 @@ impl ComfyType<String> for Expr {
 
                     if t != typ {
                         st.errors.push(Error::Compile(
-                            "Array types do not match".to_owned(),
+                            format!("Array types do not match, expected {:?}, got {:?}", typ, t),
                             val.span(),
                         ));
 
@@ -221,7 +252,7 @@ impl ComfyType<String> for Expr {
     }
 }
 
-impl ComfyType<String> for Vec<Expr> {
+impl ComfyNode<String> for Vec<Expr> {
     fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()

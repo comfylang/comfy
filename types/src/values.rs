@@ -1,9 +1,9 @@
 use chumsky::span::SimpleSpan;
+use enum_procs::PartialEqVariant;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEqVariant)]
 pub enum Type {
     Bool(SimpleSpan),
-
     // Numeric
     // Signed
     I8(SimpleSpan),

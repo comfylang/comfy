@@ -15,3 +15,5 @@ categories = []
 
 [dependencies]
 chumsky = { version = "=1.0.0-alpha.7" }
+comfy-utils = { path = "../utils", version = "0.1.0" }
+enum-procs = "0.1.1"

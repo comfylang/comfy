@@ -1,9 +1,9 @@
 use chumsky::span::SimpleSpan;
 use comfy_types::{AccessModifier, Type};
 
-use super::{ComfyType, CompileResult, State};
+use super::{ComfyNode, CompileResult, State};
 
-impl ComfyType<String> for AccessModifier {
+impl ComfyNode<String> for AccessModifier {
     fn to_cpp(&self, _: &mut State) -> CompileResult<String> {
         Ok(match self {
             AccessModifier::Public(_) => "public".to_owned(),

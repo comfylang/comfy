@@ -1,9 +1,9 @@
 use chumsky::span::SimpleSpan;
 use comfy_types::{Literal, Type};
 
-use super::{ComfyType, CompileResult, Error, State, TypeInfo};
+use super::{ComfyNode, CompileResult, Error, State, TypeInfo};
 
-impl ComfyType<(String, TypeInfo)> for Type {
+impl ComfyNode<(String, TypeInfo)> for Type {
     fn to_cpp(&self, st: &mut State) -> CompileResult<(String, TypeInfo)> {
         let not_arr = TypeInfo(false, None);
         let empty_arr = TypeInfo(true, None);
@@ -81,7 +81,7 @@ impl ComfyType<(String, TypeInfo)> for Type {
     }
 }
 
-impl ComfyType<String> for Literal {
+impl ComfyNode<String> for Literal {
     fn to_cpp(&self, _: &mut State) -> CompileResult<String> {
         Ok(match self {
             Literal::True(_) => "true".to_owned(),

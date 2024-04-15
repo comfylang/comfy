@@ -11,6 +11,4 @@ readme = "./README.md"
 keywords = ["comfy", "comfy-lang", "utils"]
 categories = []
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]

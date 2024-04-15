@@ -5,7 +5,7 @@ fn sum(arr: [u8; 2]) -> i8 {
 }
 
 fn main() -> int {
-  let arr = [1, 0.2];
+  let arr = [1, 2];
   
   printf("%d", sum(arr)); // Prints 3
 

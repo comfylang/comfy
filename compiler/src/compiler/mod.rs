@@ -1,3 +1,4 @@
+use colored::*;
 use comfy_types::Ast;
 use std::time::{Duration, Instant};
 
@@ -13,6 +14,7 @@ pub struct CompilerOut {
     pub code: String,
     pub compile_time: Duration,
     pub translation_time: Duration,
+    pub state: State,
 }
 
 impl Compiler {
@@ -34,6 +36,10 @@ impl Compiler {
                 state.errors.push(e);
             }
 
+            if args.verbose {
+                println!("{} {:#?}", "\nState:\n".bold().green(), state);
+            }
+
             return Err(state.errors);
         }
 
@@ -52,12 +58,18 @@ impl Compiler {
 
         if let Err(e) = compiled {
             state.errors.push(e);
+
+            if args.verbose {
+                println!("{} {:#?}", "\nState:\n".bold().green(), state);
+            }
+
             return Err(state.errors);
         } else {
             return Ok(CompilerOut {
                 code,
                 compile_time,
                 translation_time,
+                state,
             });
         }
     }

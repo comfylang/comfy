@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
 use chumsky::span::SimpleSpan;
 use comfy_types::{Argument, Expr, Statements, Type};
 use comfy_utils::inc_indent;
 
 use crate::compiler::Error;
 
-use super::{ComfyType, CompileResult, State};
+use super::{ComfyNode, CompileResult, State};
 
 fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResult<String> {
     let expr_ty = expr.resolve_type(st).unwrap_or_else(|_s| {
@@ -18,10 +20,12 @@ fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResu
         Type::Unknown(expr.span())
     });
 
-    let cty = match ty {
-        Type::Unknown(_) => expr_ty.to_cpp(st)?,
-        _ => ty.to_cpp(st)?,
+    let real_type = match ty {
+        Type::Unknown(_) => expr_ty,
+        _ => ty.clone(),
     };
+
+    let cty = real_type.to_cpp(st)?;
 
     let is_default = if let Expr::Unknown = expr {
         false
@@ -48,10 +52,12 @@ fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResu
         "".to_owned()
     };
 
+    st.set_ident(name, real_type);
+
     Ok(format!("{}{}{}", type_name, arr_desc, assign_default,))
 }
 
-impl ComfyType<String> for Statements {
+impl ComfyNode<String> for Statements {
     fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(match self {
             Statements::ExpressionStatement(e, _) => format!("{};", e.to_cpp(st)?),
@@ -59,6 +65,9 @@ impl ComfyType<String> for Statements {
                 format!("{};", typed_name(st, name, ty, expr)?)
             }
             Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, _s) => {
+                st.set_ident(name, ty.clone());
+                st.scope_stack.push(HashMap::new());
+
                 let cty = ty.to_cpp(st)?;
 
                 if cty.1 .0 {
@@ -68,6 +77,8 @@ impl ComfyType<String> for Statements {
 
                 let cargs = args.to_cpp(st)?;
                 let cbody = body.to_cpp(st)?;
+
+                st.scope_stack.pop();
 
                 format!(
                     "{} {}({}) {{\n{}\n}}\n",
@@ -95,7 +106,7 @@ impl ComfyType<String> for Statements {
     }
 }
 
-impl ComfyType<String> for Vec<Statements> {
+impl ComfyNode<String> for Vec<Statements> {
     fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
@@ -116,7 +127,7 @@ impl ComfyType<String> for Vec<Statements> {
     }
 }
 
-impl ComfyType<String> for Argument {
+impl ComfyNode<String> for Argument {
     fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         typed_name(st, &self.0, &self.1, &self.2)
     }
@@ -130,7 +141,7 @@ impl ComfyType<String> for Argument {
     }
 }
 
-impl ComfyType<String> for Vec<Argument> {
+impl ComfyNode<String> for Vec<Argument> {
     fn to_cpp(&self, st: &mut State) -> CompileResult<String> {
         Ok(self
             .iter()
