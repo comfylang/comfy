@@ -27,7 +27,11 @@ fn main() {
         match compiled {
             Ok(compiled) => {
                 if args.verbose {
-                    println!("{} {:#?}", "\nState:\n".bold().green(), compiled.state);
+                    println!(
+                        "\n{}\n \n\n{:#?}\n",
+                        "State:".bold().green(),
+                        compiled.state
+                    );
                     println!(
                         "\n{} \n\n{}\n",
                         "Tranlated code:".bold().green(),

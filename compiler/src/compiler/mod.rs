@@ -37,7 +37,7 @@ impl Compiler {
             }
 
             if args.verbose {
-                println!("{} {:#?}", "\nState:\n".bold().green(), state);
+                println!("\n{}\n {:#?}", "State:".bold().green(), state);
             }
 
             return Err(state.errors);
@@ -60,7 +60,7 @@ impl Compiler {
             state.errors.push(e);
 
             if args.verbose {
-                println!("{} {:#?}", "\nState:\n".bold().green(), state);
+                println!("\n{}\n {:#?}", "State:".bold().green(), state);
             }
 
             return Err(state.errors);

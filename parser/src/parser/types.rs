@@ -36,7 +36,6 @@ pub fn types<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseError<'a>> {
         just(id!("u64")).map_with(to!(Type::U64)),
         just(id!("f32")).map_with(to!(Type::F32)),
         just(id!("f64")).map_with(to!(Type::F64)),
-        just(id!("f128")).map_with(to!(Type::F128)),
         just(id!("int")).map_with(to!(Type::Int)),
         just(id!("uint")).map_with(to!(Type::Uint)),
     ))

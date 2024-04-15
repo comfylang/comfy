@@ -52,7 +52,7 @@ fn typed_name(st: &mut State, name: &str, ty: &Type, expr: &Expr) -> CompileResu
         "".to_owned()
     };
 
-    st.set_ident(name, real_type);
+    st.add_variable(name, real_type);
 
     Ok(format!("{}{}{}", type_name, arr_desc, assign_default,))
 }
@@ -65,7 +65,8 @@ impl ComfyNode<String> for Statements {
                 format!("{};", typed_name(st, name, ty, expr)?)
             }
             Statements::FunctionDeclaration(_access_modifier, name, args, ty, body, _s) => {
-                st.set_ident(name, ty.clone());
+                st.add_func(name, ty.clone(), args.clone());
+
                 st.scope_stack.push(HashMap::new());
 
                 let cty = ty.to_cpp(st)?;

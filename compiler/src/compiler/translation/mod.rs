@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use chumsky::span::SimpleSpan;
-use comfy_types::{Ast, Type};
+use comfy_types::{Argument, Ast, Type};
 
 pub mod access_modifier;
 pub mod expression;
@@ -54,8 +54,15 @@ pub struct State {
 }
 
 #[derive(Debug, Clone)]
+pub enum IdentValue {
+    Func(Vec<Argument>),
+    Variable,
+}
+
+#[derive(Debug, Clone)]
 pub struct Ident {
     pub return_type: Type,
+    pub value: IdentValue,
 }
 
 impl State {
@@ -66,11 +73,19 @@ impl State {
         }
     }
 
-    pub fn set_ident(&mut self, ident: &str, type_: Type) {
+    pub fn set_ident(&mut self, ident: &str, return_type: Type, value: IdentValue) {
         self.scope_stack
             .last_mut()
             .unwrap()
-            .insert(ident.to_owned(), Ident { return_type: type_ });
+            .insert(ident.to_owned(), Ident { return_type, value });
+    }
+
+    pub fn add_variable(&mut self, ident: &str, return_type: Type) {
+        self.set_ident(ident, return_type, IdentValue::Variable);
+    }
+
+    pub fn add_func(&mut self, ident: &str, return_type: Type, args: Vec<Argument>) {
+        self.set_ident(ident, return_type, IdentValue::Func(args));
     }
 
     pub fn get_ident_mut(&mut self, ident: &str, span: SimpleSpan) -> CompileResult<&mut Ident> {

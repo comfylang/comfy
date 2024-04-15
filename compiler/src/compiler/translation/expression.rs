@@ -2,7 +2,7 @@ use chumsky::span::SimpleSpan;
 use comfy_types::{Expr, Type};
 use comfy_utils::b;
 
-use super::{ComfyNode, CompileResult, Error, State};
+use super::{ComfyNode, CompileResult, Error, IdentValue, State};
 
 #[macro_export]
 macro_rules! cast_format {
@@ -86,7 +86,46 @@ impl ComfyNode<String> for Expr {
             Expr::BitAndAssign(l, r) => cast_format!(l, "&=", r, st, self),
             Expr::BitXorAssign(l, r) => cast_format!(l, "^=", r, st, self),
             Expr::BitOrAssign(l, r) => cast_format!(l, "|=", r, st, self),
-            Expr::Call(l, r, _) => format!("{}({})", l.to_cpp(st)?, r.to_owned().to_cpp(st)?),
+            Expr::Call(fun, args, _) => {
+                let fun = fun.to_cpp(st)?;
+
+                let ident = st.get_ident(&fun, self.span())?.clone();
+
+                match &ident.value {
+                    IdentValue::Func(ident_args) => {
+                        if args.len() != ident_args.len() {
+                            st.errors.push(Error::Compile(
+                                format!(
+                                    "Expected {} argument(s), got {}",
+                                    ident_args.len(),
+                                    args.len()
+                                ),
+                                args.span(),
+                            ));
+                        } else {
+                            let args_types = args
+                                .iter()
+                                .map(|arg| arg.resolve_type(st))
+                                .collect::<Result<Vec<_>, _>>()?;
+
+                            for (ident_arg_t, arg_t) in ident_args.iter().zip(args_types) {
+                                if !ident_arg_t.1.casted_to(&arg_t, st) {
+                                    return Err(Error::Compile(
+                                        format!("Expected type {}, got {}", ident_arg_t.1, arg_t),
+                                        arg_t.span(),
+                                    ));
+                                }
+                            }
+                        }
+
+                        format!("{}({})", fun, ident_args.to_owned().to_cpp(st)?)
+                    }
+                    IdentValue::Variable => Err(Error::Compile(
+                        format!("Cannot call variable `{}`", fun),
+                        self.span(),
+                    ))?,
+                }
+            }
             Expr::ArrMember(l, r) => format!("({}[{}])", l.to_cpp(st)?, r.to_cpp(st)?),
             Expr::Tuple(_, _) => todo!(),
             Expr::Array(v, _) => {
