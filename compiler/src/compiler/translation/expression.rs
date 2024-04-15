@@ -2,7 +2,7 @@ use chumsky::span::SimpleSpan;
 use comfy_types::{Expr, Type};
 use comfy_utils::b;
 
-use super::{ComfyNode, CompileResult, Error, IdentValue, State};
+use super::{ComfyNode, CompileResult, Error, Ident, IdentValue, State};
 
 #[macro_export]
 macro_rules! cast_format {
@@ -87,9 +87,9 @@ impl ComfyNode<String> for Expr {
             Expr::BitXorAssign(l, r) => cast_format!(l, "^=", r, st, self),
             Expr::BitOrAssign(l, r) => cast_format!(l, "|=", r, st, self),
             Expr::Call(fun, args, _) => {
-                let fun = fun.to_cpp(st)?;
+                let cfun = fun.to_cpp(st)?;
 
-                let ident = st.get_ident(&fun, self.span())?.clone();
+                let ident = fun.resolve_ident(st)?;
 
                 match &ident.value {
                     IdentValue::Func(ident_args) => {
@@ -118,10 +118,10 @@ impl ComfyNode<String> for Expr {
                             }
                         }
 
-                        format!("{}({})", fun, ident_args.to_owned().to_cpp(st)?)
+                        format!("{}({})", cfun, ident_args.to_owned().to_cpp(st)?)
                     }
                     IdentValue::Variable => Err(Error::Compile(
-                        format!("Cannot call variable `{}`", fun),
+                        format!("Cannot call variable `{}`", cfun),
                         self.span(),
                     ))?,
                 }
@@ -287,6 +287,16 @@ impl ComfyNode<String> for Expr {
                 Ok(Type::Array(b(typ), size.try_into().unwrap(), *s))
             }
             Expr::Unknown => Err(Error::Compile("Unknown expression".to_owned(), self.span()))?,
+        }
+    }
+
+    fn resolve_ident(&self, state: &mut State) -> CompileResult<Ident> {
+        match self {
+            Expr::Ident(ident, span) => Ok(state.get_ident(ident, *span)?.clone()),
+            _ => Err(Error::Compile(
+                "Cannot resolve identifier".to_owned(),
+                self.span(),
+            )),
         }
     }
 }
