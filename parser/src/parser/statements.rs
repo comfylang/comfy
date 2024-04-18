@@ -12,11 +12,25 @@ use super::common::decl_args;
 use super::common::fn_type_descriptor;
 
 use super::common::type_descriptor;
-use super::{expressions, ident};
+use super::{expression, ident};
 
 pub fn statements<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Statements>, ParseError<'a>> {
-    recursive(|stmts| {
-        let expr_statement = expressions()
+    recursive(|stmt| {
+        let stmts = stmt
+            .clone()
+            .repeated()
+            .collect::<Vec<Statements>>()
+            .labelled("statements");
+
+        let code_block = choice((
+            stmts
+                .delimited_by(just(Kind::LAngle), just(Kind::RAngle))
+                .labelled("block of multiple statements"),
+            stmt.map(|s| vec![s]).labelled("block of one statement"),
+        ))
+        .labelled("code block");
+
+        let expr_statement = expression()
             .then_ignore(just(Kind::Semicolon))
             .map_with(|expr, e| Statements::ExpressionStatement(expr, e.span()))
             .labelled("expression statement");
@@ -35,11 +49,7 @@ pub fn statements<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Statements>, Pars
             .then(ident())
             .then(decl_args().delimited_by(just(Kind::LParen), just(Kind::RParen)))
             .then(fn_type_descriptor())
-            .then(
-                stmts
-                    .clone()
-                    .delimited_by(just(Kind::LAngle), just(Kind::RAngle)),
-            )
+            .then(code_block.clone())
             .map_with(|((((access_modifier, name), args), ty), body), e| {
                 Statements::FunctionDeclaration(
                     access_modifier.unwrap_or(AccessModifier::Private(e.span())),
@@ -52,11 +62,25 @@ pub fn statements<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Statements>, Pars
             })
             .labelled("function declaration");
 
+        let if_statement = just(Kind::If)
+            .ignore_then(expression())
+            .then(code_block.clone())
+            .then(
+                just(Kind::Else)
+                    .ignore_then(code_block)
+                    .or_not()
+                    .map(|b| b.unwrap_or(vec![])),
+            )
+            .map_with(|((condition, if_block), else_block), e| {
+                Statements::IfStatement(condition, if_block, else_block, e.span())
+            })
+            .labelled("if statement");
+
         let return_statement = choice((
             just(Kind::Return)
-                .ignore_then(expressions())
+                .ignore_then(expression())
                 .then_ignore(just(Kind::Semicolon)),
-            expressions(),
+            expression(),
         ))
         .map_with(|expr, e| Statements::ReturnStatement(expr, e.span()))
         .labelled("return statement");
@@ -65,11 +89,13 @@ pub fn statements<'a>() -> impl Parser<'a, TokenInput<'a>, Vec<Statements>, Pars
             function_declaration,
             expr_statement,
             let_statement,
+            if_statement,
             return_statement,
         ))
-        .repeated()
-        .collect::<Vec<Statements>>()
-        .labelled("statements")
         .boxed()
     })
+    .repeated()
+    .collect::<Vec<Statements>>()
+    .labelled("statements")
+    .boxed()
 }

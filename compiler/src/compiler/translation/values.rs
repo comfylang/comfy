@@ -26,7 +26,7 @@ impl ComfyNode<(String, TypeInfo)> for Type {
             Type::Int(_) => Ok(("int".to_owned(), not_arr)),
             Type::Uint(_) => Ok(("unsigned int".to_owned(), not_arr)),
             Type::Char(_) => Ok(("char".to_owned(), not_arr)),
-            Type::Str(_) => Ok(("char".to_owned(), empty_arr)),
+            Type::Str(_) => Ok(("std::string".to_owned(), not_arr)),
             Type::Void(_) => Ok(("void".to_owned(), not_arr)),
             Type::Never(_) => Ok(("void".to_owned(), not_arr)),
             Type::Unknown(s) => Err(Error::Compile(

@@ -1,0 +1,39 @@
+fn print(val: str) -> void {
+  raw_cpp#std::cout << val << std::endl;#;
+}
+
+fn month(n: u8) -> str {
+  if (n==1) "January"
+  else if (n==2) "February"
+  else if (n==3) "March"
+  else if (n==4) "April"
+  else if (n==5) "May"
+  else if (n==6) "June"
+  else if (n==7) "July"
+  else if (n==8) "August"
+  else if (n==9) "September"
+  else if (n==10) "October"
+  else if (n==11) "November"
+  else if (n==12) "December"
+  else "Unknown"
+}
+
+fn main() -> int {
+  
+  print(month(1));
+  print(month(2));
+  print(month(3));
+  print(month(4));
+  print(month(5));
+  print(month(6));
+  print(month(7));
+  print(month(8));
+  print(month(9));
+  print(month(10));
+  print(month(11));
+  print(month(12));
+  print(month(13));
+
+
+  0
+}

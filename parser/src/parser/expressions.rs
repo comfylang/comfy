@@ -11,7 +11,7 @@ use super::ParseError;
 use super::types::types;
 use super::{common::ident, literals::literals};
 
-pub fn expressions<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {
+pub fn expression<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {
     let cpp_code = cpp_code()
         .map_with(|s, e| Expr::CppCode(s, e.span()))
         .boxed();

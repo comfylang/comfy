@@ -1,0 +1,18 @@
+fn print(val: u8) -> void {
+  raw_cpp#printf("%d\n", val)#;
+}
+
+fn factorial(n: u8) -> u8 {
+  if (n == 0) 1
+  else n * factorial(n - 1)
+}
+
+fn main() -> int {
+  
+  print(factorial(0));
+  print(factorial(3));
+  print(factorial(5));
+
+
+  0
+}

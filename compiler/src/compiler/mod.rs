@@ -44,7 +44,10 @@ impl Compiler {
         }
 
         let code = result.unwrap();
-        let code = format!("#include <iostream>\n#include <stdint.h>\n\n{}", code);
+        let code = format!(
+            "#include <iostream>\n#include <stdint.h>\n#include <string>\n\n{}",
+            code
+        );
 
         let compile_time = Instant::now();
 
@@ -61,6 +64,7 @@ impl Compiler {
 
             if args.verbose {
                 println!("\n{}\n {:#?}", "State:".bold().green(), state);
+                println!("\n{}\n {}", "Code:".bold().green(), code);
             }
 
             return Err(state.errors);

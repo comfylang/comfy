@@ -172,14 +172,11 @@ pub fn token<'a>() -> impl Parser<'a, &'a str, (Kind, SimpleSpan), LexError<'a>>
     let literal = literals().map(|l| Kind::Literal(l));
 
     let cpp_code = none_of("#")
-        .to_slice()
-        .map(ToString::to_string)
         .repeated()
         .to_slice()
-        .map(ToString::to_string)
         .delimited_by(just("raw_cpp#"), just('#'))
-        .map(|s| Kind::CppCode(s))
-        .labelled("string literal");
+        .map(|s: &str| Kind::CppCode(s.to_owned()))
+        .labelled("cpp code");
 
     let token = cpp_code.or(op2).or(op1).or(literal).or(ident);
 

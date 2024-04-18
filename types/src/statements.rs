@@ -14,6 +14,7 @@ pub enum Statements {
         Vec<Statements>,
         SimpleSpan,
     ),
+    IfStatement(Expr, Vec<Statements>, Vec<Statements>, SimpleSpan),
     ReturnStatement(Expr, SimpleSpan),
 }
 

@@ -6,7 +6,7 @@ mod types;
 
 use comfy_types::tokens::Kind;
 pub use common::ident;
-pub use expressions::expressions;
+pub use expressions::expression;
 
 pub use statements::statements;
 pub use types::types;

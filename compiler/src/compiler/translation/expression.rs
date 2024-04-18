@@ -110,16 +110,15 @@ impl ComfyNode<String> for Expr {
                         } else {
                             let args_types = args
                                 .iter()
-                                .skip(1)
                                 .map(|arg| arg.resolve_type(st))
                                 .collect::<Result<Vec<_>, _>>()?;
 
-                            for ((ident_arg_t, arg_t), arg) in
+                            for ((ident_arg, arg_t), arg) in
                                 ident_args.iter().zip(args_types).zip(args)
                             {
-                                if !ident_arg_t.1.casted_to(&arg_t, st) {
+                                if !ident_arg.1.casted_to(&arg_t, st) {
                                     return Err(Error::Compile(
-                                        format!("Expected type {}, got {}", ident_arg_t.1, arg_t),
+                                        format!("Expected type {}, got {}", ident_arg.1, arg_t),
                                         arg.span(),
                                     ));
                                 }

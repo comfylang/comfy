@@ -117,6 +117,25 @@ impl ComfyNode<String> for Statements {
                 )
             }
             Statements::ReturnStatement(e, _) => format!("return {};", e.to_cpp(st)?),
+            Statements::IfStatement(condition, then, els, _) => {
+                let ccond = condition.to_cpp(st)?;
+                let cthen = then.to_cpp(st)?;
+                let celse = els.to_cpp(st)?;
+
+                let cthen = if then.len() == 1 {
+                    format!("{}\n", cthen)
+                } else {
+                    format!("{{\n{}\n}}", inc_indent(cthen))
+                };
+
+                let celse = if els.len() == 1 {
+                    format!("{}", celse)
+                } else {
+                    format!("{{\n{}\n}}", inc_indent(celse))
+                };
+
+                format!("if {} {}else {}", ccond, cthen, celse)
+            }
         })
     }
 
@@ -126,6 +145,7 @@ impl ComfyNode<String> for Statements {
             Statements::LetStatement(_, _, _, s) => *s,
             Statements::FunctionDeclaration(_, _, _, _, _, s) => *s,
             Statements::ReturnStatement(_, s) => *s,
+            Statements::IfStatement(_, _, _, s) => *s,
         }
     }
 

@@ -4,7 +4,7 @@ use comfy_types::{
     AccessModifier, Argument, Expr, Type,
 };
 
-use super::{expressions, types, ParseError};
+use super::{expression, types, ParseError};
 
 pub fn ident<'a>() -> impl Parser<'a, TokenInput<'a>, String, ParseError<'a>> {
     select! {
@@ -56,7 +56,7 @@ pub fn fn_type_descriptor<'a>() -> impl Parser<'a, TokenInput<'a>, Type, ParseEr
 
 pub fn assignment<'a>() -> impl Parser<'a, TokenInput<'a>, Expr, ParseError<'a>> {
     just(Kind::Assign)
-        .ignore_then(expressions())
+        .ignore_then(expression())
         .labelled("assignment")
 }
 
